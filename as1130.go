@@ -1,6 +1,8 @@
 package as1130
 
 import (
+	"fmt"
+
 	"golang.org/x/exp/io/i2c"
 )
 
@@ -32,6 +34,17 @@ const (
 	ControlInterruptStatus
 	ControlStatus
 )
+
+// boolToByte converts a boolean to a 1bit value. It allows us to provide
+// human friendly structs and not have to do runtime validation on 1bit
+// binary options.
+func boolToByte(v bool) byte {
+	if v {
+		return 1
+	}
+
+	return 0
+}
 
 // AS1130 is a connected controller.
 type AS1130 struct {
@@ -70,4 +83,30 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	}
 
 	return a.conn.WriteReg(subregister, []byte{data})
+}
+
+// Config Register Format (datasheet fig. 45)
+type Config struct {
+	LowVDDReset         bool  // Reset LowVDD at end of movie or picture
+	LowVDDStatus        bool  // Map LowVDD to IRQ pin
+	LEDErrorCorrection  bool  // Disable open LEDs
+	DotCorrection       bool  // Analog current DotCorrection
+	CommonAddress       bool  // I2C common address for all AS1130
+	MemoryConfiguration uint8 // RAM Configuration
+}
+
+// SetConfig sets the config register.
+func (a *AS1130) SetConfig(c Config) error {
+	if v := c.MemoryConfiguration; v > 6 {
+		return fmt.Errorf("MemoryConfiguration out of range [0,6]: %d", v)
+	}
+
+	data := boolToByte(c.LowVDDReset)<<7 |
+		boolToByte(c.LowVDDStatus)<<6 |
+		boolToByte(c.LEDErrorCorrection)<<5 |
+		boolToByte(c.DotCorrection)<<4 |
+		boolToByte(c.CommonAddress)<<3 |
+		c.MemoryConfiguration
+
+	return a.Write(RegisterControl, ControlConfig, data)
 }

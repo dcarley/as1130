@@ -57,5 +57,39 @@ var _ = Describe("as1130", func() {
 				TestCommand(writeBuf, RegisterControl, ControlConfig, "00000001")
 			})
 		})
+
+		Describe("SetConfig", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlConfig
+			)
+
+			It("should write defaults", func() {
+				config := Config{}
+				Expect(as.SetConfig(config)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				config := Config{
+					LowVDDReset:         true,
+					LowVDDStatus:        true,
+					LEDErrorCorrection:  true,
+					DotCorrection:       true,
+					CommonAddress:       true,
+					MemoryConfiguration: 6,
+				}
+				Expect(as.SetConfig(config)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11111110")
+			})
+
+			It("should error on out of range MemoryConfiguration", func() {
+				config := Config{
+					MemoryConfiguration: 7,
+				}
+				Expect(as.SetConfig(config)).To(MatchError("MemoryConfiguration out of range [0,6]: 7"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
 	})
 })
