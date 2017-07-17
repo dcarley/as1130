@@ -156,5 +156,30 @@ var _ = Describe("as1130", func() {
 				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 		})
+
+		Describe("SetShutdown", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlShutdown
+			)
+
+			It("should write defaults", func() {
+				shutdown := Shutdown{}
+				Expect(as.SetShutdown(shutdown)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000011")
+			})
+
+			It("should write non-defaults", func() {
+				shutdown := Shutdown{
+					TestAll:    true,
+					AutoTest:   true,
+					ManualTest: true,
+					Initialise: true,
+					Shutdown:   true,
+				}
+				Expect(as.SetShutdown(shutdown)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00011100")
+			})
+		})
 	})
 })

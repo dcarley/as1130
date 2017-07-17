@@ -151,3 +151,23 @@ func (a *AS1130) SetConfig(c Config) error {
 
 	return a.Write(RegisterControl, ControlConfig, data)
 }
+
+// Shutdown & Open/Short Register Format (datasheet fig. 48)
+type Shutdown struct {
+	TestAll    bool // LED open/short test is performed on all LED locations
+	AutoTest   bool // Automatic LED open/short test is started when picture or movie is displayed
+	ManualTest bool // Manual LED open/short test is started after updating shutdown register
+	Initialise bool // Initialise control logic (internal state machine is reset again)
+	Shutdown   bool // Put device in shutdown mode (outputs are turned off, internal state machine stops)
+}
+
+// SetShutdown sets the shutdown register.
+func (a *AS1130) SetShutdown(s Shutdown) error {
+	data := boolToByte(s.TestAll)<<4 |
+		boolToByte(s.AutoTest)<<3 |
+		boolToByte(s.ManualTest)<<2 |
+		boolToByte(!s.Initialise)<<1 |
+		boolToByte(!s.Shutdown)
+
+	return a.Write(RegisterControl, ControlShutdown, data)
+}
