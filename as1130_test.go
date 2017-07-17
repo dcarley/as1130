@@ -58,6 +58,32 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetCurrentSource", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlCurrentSource
+			)
+
+			It("should set to min", func() {
+				Expect(as.SetCurrentSource(0)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(0)))
+			})
+
+			It("should set to half way", func() {
+				Expect(as.SetCurrentSource(15)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(127)))
+			})
+
+			It("should set to max", func() {
+				Expect(as.SetCurrentSource(30)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(255)))
+			})
+
+			It("should error on invalid current", func() {
+				Expect(as.SetCurrentSource(31)).To(MatchError("current out of range [0,30]: 31"))
+			})
+		})
+
 		Describe("SetConfig", func() {
 			const (
 				register    = RegisterControl

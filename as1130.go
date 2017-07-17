@@ -85,6 +85,15 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	return a.conn.WriteReg(subregister, []byte{data})
 }
 
+// SetCurrentSource sets the current (mA) for all LEDs.
+func (a *AS1130) SetCurrentSource(milliAmps byte) error {
+	if milliAmps > 30 {
+		return fmt.Errorf("current out of range [0,30]: %d", milliAmps)
+	}
+
+	return a.Write(RegisterControl, ControlCurrentSource, byte(int(milliAmps)*255/30.0))
+}
+
 // Config Register Format (datasheet fig. 45)
 type Config struct {
 	LowVDDReset         bool  // Reset LowVDD at end of movie or picture
