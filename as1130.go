@@ -85,6 +85,29 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	return a.conn.WriteReg(subregister, []byte{data})
 }
 
+// DisplayOption Register Format (datasheet fig. 43)
+type DisplayOption struct {
+	Loops          uint8 // Number of loops played in one movie
+	BlinkFrequency bool  // Blink every 3s instead of 1.5s
+	ScanLimit      uint8 // Number of displayed segments in one frame
+}
+
+// SetDisplayOption sets the display option.
+func (a *AS1130) SetDisplayOption(d DisplayOption) error {
+	if v := d.Loops; v > 7 {
+		return fmt.Errorf("Loops out of range [0,7]: %d", v)
+	}
+	if v := d.ScanLimit; v < 1 || v > 12 {
+		return fmt.Errorf("ScanLimit out of range [1,12]: %d", v)
+	}
+
+	data := d.Loops<<5 |
+		boolToByte(d.BlinkFrequency)<<4 |
+		d.ScanLimit - 1
+
+	return a.Write(RegisterControl, ControlDisplayOption, data)
+}
+
 // SetCurrentSource sets the current (mA) for all LEDs.
 func (a *AS1130) SetCurrentSource(milliAmps byte) error {
 	if milliAmps > 30 {
