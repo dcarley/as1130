@@ -69,24 +69,24 @@ var _ = Describe("as1130", func() {
 					ScanLimit: 1,
 				}
 				Expect(as.SetDisplayOption(option)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000000")
+				TestCommand(writeBuf, register, subregister, "11100000")
 			})
 
 			It("should write non-defaults", func() {
 				option := DisplayOption{
-					Loops:          7,
+					Loops:          1,
 					BlinkFrequency: true,
 					ScanLimit:      12,
 				}
 				Expect(as.SetDisplayOption(option)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11111011")
+				TestCommand(writeBuf, register, subregister, "00111011")
 			})
 
 			It("should error on out of range Loops", func() {
 				option := DisplayOption{
 					Loops: 8,
 				}
-				Expect(as.SetDisplayOption(option)).To(MatchError("Loops out of range [0,7]: 8"))
+				Expect(as.SetDisplayOption(option)).To(MatchError("Loops out of range [1,7]: 8"))
 				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 

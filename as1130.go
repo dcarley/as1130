@@ -87,15 +87,18 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 
 // DisplayOption Register Format (datasheet fig. 43)
 type DisplayOption struct {
-	Loops          uint8 // Number of loops played in one movie
+	Loops          uint8 // Number of loops played in one movie, forever (7) if unset
 	BlinkFrequency bool  // Blink every 3s instead of 1.5s
 	ScanLimit      uint8 // Number of displayed segments in one frame
 }
 
 // SetDisplayOption sets the display option.
 func (a *AS1130) SetDisplayOption(d DisplayOption) error {
+	if d.Loops == 0 {
+		d.Loops = 7
+	}
 	if v := d.Loops; v > 7 {
-		return fmt.Errorf("Loops out of range [0,7]: %d", v)
+		return fmt.Errorf("Loops out of range [1,7]: %d", v)
 	}
 	if v := d.ScanLimit; v < 1 || v > 12 {
 		return fmt.Errorf("ScanLimit out of range [1,12]: %d", v)
