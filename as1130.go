@@ -92,13 +92,16 @@ type Config struct {
 	LEDErrorCorrection  bool  // Disable open LEDs
 	DotCorrection       bool  // Analog current DotCorrection
 	CommonAddress       bool  // I2C common address for all AS1130
-	MemoryConfiguration uint8 // RAM Configuration
+	MemoryConfiguration uint8 // RAM Configuration, 1 if unset
 }
 
 // SetConfig sets the config register.
 func (a *AS1130) SetConfig(c Config) error {
+	if c.MemoryConfiguration == 0 {
+		c.MemoryConfiguration = 1
+	}
 	if v := c.MemoryConfiguration; v > 6 {
-		return fmt.Errorf("MemoryConfiguration out of range [0,6]: %d", v)
+		return fmt.Errorf("MemoryConfiguration out of range [1,6]: %d", v)
 	}
 
 	data := boolToByte(c.LowVDDReset)<<7 |

@@ -67,7 +67,7 @@ var _ = Describe("as1130", func() {
 			It("should write defaults", func() {
 				config := Config{}
 				Expect(as.SetConfig(config)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000000")
+				TestCommand(writeBuf, register, subregister, "00000001")
 			})
 
 			It("should write non-defaults", func() {
@@ -87,7 +87,7 @@ var _ = Describe("as1130", func() {
 				config := Config{
 					MemoryConfiguration: 7,
 				}
-				Expect(as.SetConfig(config)).To(MatchError("MemoryConfiguration out of range [0,6]: 7"))
+				Expect(as.SetConfig(config)).To(MatchError("MemoryConfiguration out of range [1,6]: 7"))
 				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 		})
