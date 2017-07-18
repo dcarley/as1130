@@ -169,6 +169,30 @@ func (a *AS1130) SetMovieMode(m MovieMode) error {
 	return a.Write(RegisterControl, ControlMovieMode, data)
 }
 
+// FrameTime & Scroll Register Format (datasheet fig. 42)
+type FrameTime struct {
+	Fade       bool  // Fade at end of frame
+	ScrollLeft bool  // Scroll left instead of right
+	BlockSize  bool  // Scroll in 5 LED blocks
+	Scrolling  bool  // Scroll digits at play movie
+	Delay      uint8 // Delay between frame change in a movie, multiple of 32.5ms
+}
+
+// SetFrameTime sets the frame time register.
+func (a *AS1130) SetFrameTime(f FrameTime) error {
+	if v := f.Delay; v > 15 {
+		return fmt.Errorf("Delay out of range [0,15]: %d", v)
+	}
+
+	data := boolToByte(f.Fade)<<7 |
+		boolToByte(f.ScrollLeft)<<6 |
+		boolToByte(f.BlockSize)<<5 |
+		boolToByte(f.Scrolling)<<4 |
+		f.Delay
+
+	return a.Write(RegisterControl, ControlFrameTime, data)
+}
+
 // DisplayOption Register Format (datasheet fig. 43)
 type DisplayOption struct {
 	Loops          uint8 // Number of loops played in one movie, forever (7) if unset

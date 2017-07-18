@@ -151,6 +151,39 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetFrameTime", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlFrameTime
+			)
+
+			It("should write defaults", func() {
+				frameTime := FrameTime{}
+				Expect(as.SetFrameTime(frameTime)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				frameTime := FrameTime{
+					Fade:       true,
+					ScrollLeft: true,
+					BlockSize:  true,
+					Scrolling:  true,
+					Delay:      15,
+				}
+				Expect(as.SetFrameTime(frameTime)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11111111")
+			})
+
+			It("should error on out of range Delay", func() {
+				frameTime := FrameTime{
+					Delay: 16,
+				}
+				Expect(as.SetFrameTime(frameTime)).To(MatchError("Delay out of range [0,15]: 16"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
+
 		Describe("SetDisplayOption", func() {
 			const (
 				register    = RegisterControl
