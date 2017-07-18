@@ -58,6 +58,88 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetPicture", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlPicture
+			)
+
+			It("should write defaults", func() {
+				picture := Picture{
+					Frame: 1,
+				}
+				Expect(as.SetPicture(picture)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				picture := Picture{
+					Blink:   true,
+					Display: true,
+					Frame:   36,
+				}
+				Expect(as.SetPicture(picture)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11100011")
+			})
+
+			It("should error on zero indexed frame", func() {
+				picture := Picture{
+					Frame: 0,
+				}
+				Expect(as.SetPicture(picture)).To(MatchError("Frame out of range [1,36]: 0"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+
+			It("should error on too high frame", func() {
+				picture := Picture{
+					Frame: 37,
+				}
+				Expect(as.SetPicture(picture)).To(MatchError("Frame out of range [1,36]: 37"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
+
+		Describe("SetMovie", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlMovie
+			)
+
+			It("should write defaults", func() {
+				movie := Movie{
+					Frame: 1,
+				}
+				Expect(as.SetMovie(movie)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				movie := Movie{
+					Blink:   true,
+					Display: true,
+					Frame:   36,
+				}
+				Expect(as.SetMovie(movie)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11100011")
+			})
+
+			It("should error on zero indexed frame", func() {
+				picture := Movie{
+					Frame: 0,
+				}
+				Expect(as.SetMovie(picture)).To(MatchError("Frame out of range [1,36]: 0"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+
+			It("should error on too high frame", func() {
+				picture := Movie{
+					Frame: 37,
+				}
+				Expect(as.SetMovie(picture)).To(MatchError("Frame out of range [1,36]: 37"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
+
 		Describe("SetDisplayOption", func() {
 			const (
 				register    = RegisterControl

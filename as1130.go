@@ -13,8 +13,12 @@ const (
 
 // Register Selection Address Map (datasheet fig. 31)
 const (
-	RegisterControl byte = 0xC0
-	RegisterSelect  byte = 0xFD
+	RegisterOnOffFrameFirst    byte = 0x01
+	RegisterOnOffFrameLast     byte = 0x24
+	RegisterBlinkPWMFrameFirst byte = 0x40
+	RegisterBlinkPWMFrameLast  byte = 0x45
+	RegisterControl            byte = 0xC0
+	RegisterSelect             byte = 0xFD
 )
 
 // Control Register Address Map (datasheet fig. 38)
@@ -83,6 +87,54 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	}
 
 	return a.conn.WriteReg(subregister, []byte{data})
+}
+
+// Picture Register Format (datasheet fig. 39)
+type Picture struct {
+	Blink   bool  // All LEDs in blink mode during display picture
+	Display bool  // Display picture
+	Frame   uint8 // Number of picture frame
+}
+
+// SetPicture sets the picture register.
+func (a *AS1130) SetPicture(p Picture) error {
+	if p.Frame < RegisterOnOffFrameFirst || p.Frame > RegisterOnOffFrameLast {
+		return fmt.Errorf("Frame out of range [%d,%d]: %d",
+			RegisterOnOffFrameFirst,
+			RegisterOnOffFrameLast,
+			p.Frame,
+		)
+	}
+
+	data := boolToByte(p.Blink)<<7 |
+		boolToByte(p.Display)<<6 |
+		p.Frame - 1
+
+	return a.Write(RegisterControl, ControlPicture, data)
+}
+
+// Movie Register Format (datasheet fig. 40)
+type Movie struct {
+	Blink   bool  // All LEDs in blink mode during play movie
+	Display bool  // Display movie
+	Frame   uint8 // Number of first frame in movie
+}
+
+// SetMovie sets the movie register.
+func (a *AS1130) SetMovie(m Movie) error {
+	if m.Frame < RegisterOnOffFrameFirst || m.Frame > RegisterOnOffFrameLast {
+		return fmt.Errorf("Frame out of range [%d,%d]: %d",
+			RegisterOnOffFrameFirst,
+			RegisterOnOffFrameLast,
+			m.Frame,
+		)
+	}
+
+	data := boolToByte(m.Blink)<<7 |
+		boolToByte(m.Display)<<6 |
+		m.Frame - 1
+
+	return a.Write(RegisterControl, ControlMovie, data)
 }
 
 // DisplayOption Register Format (datasheet fig. 43)
