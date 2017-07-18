@@ -65,11 +65,9 @@ var _ = Describe("as1130", func() {
 			)
 
 			It("should write defaults", func() {
-				option := DisplayOption{
-					ScanLimit: 1,
-				}
+				option := DisplayOption{}
 				Expect(as.SetDisplayOption(option)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11100000")
+				TestCommand(writeBuf, register, subregister, "11101011")
 			})
 
 			It("should write non-defaults", func() {
