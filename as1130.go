@@ -147,14 +147,16 @@ func (a *AS1130) SetMovie(m Movie) error {
 type MovieMode struct {
 	Blink   bool  // All LEDs in blink mode during play movie
 	EndLast bool  // End movie with last frame instead of first
-	Frames  uint8 // Number of frames to play in movie
+	Frames  uint8 // Number of frames to play in movie, 1 if unset
 }
 
 // SetMovieMode sets the movie mode register.
 func (a *AS1130) SetMovieMode(m MovieMode) error {
-	if m.Frames < RegisterOnOffFrameFirst || m.Frames > RegisterOnOffFrameLast {
-		return fmt.Errorf("Frames out of range [%d,%d]: %d",
-			RegisterOnOffFrameFirst,
+	if m.Frames == 0 {
+		m.Frames = 1
+	}
+	if m.Frames > RegisterOnOffFrameLast {
+		return fmt.Errorf("Frames out of range [1,%d]: %d",
 			RegisterOnOffFrameLast,
 			m.Frames,
 		)

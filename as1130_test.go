@@ -127,9 +127,7 @@ var _ = Describe("as1130", func() {
 			)
 
 			It("should write defaults", func() {
-				movieMode := MovieMode{
-					Frames: 1,
-				}
+				movieMode := MovieMode{}
 				Expect(as.SetMovieMode(movieMode)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "00000000")
 			})
@@ -142,14 +140,6 @@ var _ = Describe("as1130", func() {
 				}
 				Expect(as.SetMovieMode(movieMode)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "11100011")
-			})
-
-			It("should error on zero indexed frame", func() {
-				picture := MovieMode{
-					Frames: 0,
-				}
-				Expect(as.SetMovieMode(picture)).To(MatchError("Frames out of range [1,36]: 0"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 
 			It("should error on too high frame", func() {
