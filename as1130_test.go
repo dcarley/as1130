@@ -120,6 +120,47 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetMovieMode", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlMovieMode
+			)
+
+			It("should write defaults", func() {
+				movieMode := MovieMode{
+					Frames: 1,
+				}
+				Expect(as.SetMovieMode(movieMode)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				movieMode := MovieMode{
+					Blink:   true,
+					EndLast: true,
+					Frames:  36,
+				}
+				Expect(as.SetMovieMode(movieMode)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11100011")
+			})
+
+			It("should error on zero indexed frame", func() {
+				picture := MovieMode{
+					Frames: 0,
+				}
+				Expect(as.SetMovieMode(picture)).To(MatchError("Frames out of range [1,36]: 0"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+
+			It("should error on too high frame", func() {
+				picture := MovieMode{
+					Frames: 37,
+				}
+				Expect(as.SetMovieMode(picture)).To(MatchError("Frames out of range [1,36]: 37"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
+
 		Describe("SetDisplayOption", func() {
 			const (
 				register    = RegisterControl

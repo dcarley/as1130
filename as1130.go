@@ -143,6 +143,30 @@ func (a *AS1130) SetMovie(m Movie) error {
 	return a.Write(RegisterControl, ControlMovie, data)
 }
 
+// MovieMode Register Format (datasheet fig. 41)
+type MovieMode struct {
+	Blink   bool  // All LEDs in blink mode during play movie
+	EndLast bool  // End movie with last frame instead of first
+	Frames  uint8 // Number of frames to play in movie
+}
+
+// SetMovieMode sets the movie mode register.
+func (a *AS1130) SetMovieMode(m MovieMode) error {
+	if m.Frames < RegisterOnOffFrameFirst || m.Frames > RegisterOnOffFrameLast {
+		return fmt.Errorf("Frames out of range [%d,%d]: %d",
+			RegisterOnOffFrameFirst,
+			RegisterOnOffFrameLast,
+			m.Frames,
+		)
+	}
+
+	data := boolToByte(m.Blink)<<7 |
+		boolToByte(m.EndLast)<<6 |
+		m.Frames - 1
+
+	return a.Write(RegisterControl, ControlMovieMode, data)
+}
+
 // DisplayOption Register Format (datasheet fig. 43)
 type DisplayOption struct {
 	Loops          uint8 // Number of loops played in one movie, forever (7) if unset
