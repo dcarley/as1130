@@ -2,13 +2,15 @@ package as1130
 
 import (
 	"fmt"
+	"time"
 
 	"golang.org/x/exp/io/i2c"
 )
 
 const (
-	DeviceDefault  = "/dev/i2c-1"
-	AddressDefault = 0x30
+	DeviceDefault        = "/dev/i2c-1"
+	AddressDefault       = 0x30
+	CurrentSourceDefault = 5
 )
 
 // Register Selection Address Map (datasheet fig. 31)
@@ -87,6 +89,19 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	}
 
 	return a.conn.WriteReg(subregister, []byte{data})
+}
+
+// Reset performs a shutdown and resets all settings, then waits for the
+// device to become ready again. You will need to call Init() afterwards.
+func (a *AS1130) Reset() error {
+	reset := Shutdown{
+		Initialise: true,
+		Shutdown:   true,
+	}
+	err := a.SetShutdown(reset)
+	time.Sleep(5 * time.Millisecond)
+
+	return err
 }
 
 // Picture Register Format (datasheet fig. 39)
@@ -241,7 +256,8 @@ type Config struct {
 	MemoryConfiguration uint8 // RAM Configuration, 1 if unset
 }
 
-// SetConfig sets the config register.
+// SetConfig sets the config register. The config cannot be changed once you
+// have written any frame data, you will need to call Reset().
 func (a *AS1130) SetConfig(c Config) error {
 	if c.MemoryConfiguration == 0 {
 		c.MemoryConfiguration = 1
