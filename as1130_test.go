@@ -1,11 +1,10 @@
-package as1130_test
+package as1130
 
 import (
 	"fmt"
 
 	"golang.org/x/exp/io/i2c"
 
-	. "github.com/dcarley/as1130"
 	"github.com/dcarley/as1130/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -43,7 +42,7 @@ var _ = Describe("as1130", func() {
 			conn, err := i2c.Open(opener, 0x30)
 			Expect(err).ToNot(HaveOccurred())
 
-			as = &AS1130{Conn: conn}
+			as = &AS1130{conn: conn}
 		})
 
 		AfterEach(func() {
