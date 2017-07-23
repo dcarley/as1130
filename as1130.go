@@ -248,22 +248,22 @@ func (a *AS1130) SetCurrentSource(milliAmps byte) error {
 
 // Config Register Format (datasheet fig. 45)
 type Config struct {
-	LowVDDReset         bool  // Reset LowVDD at end of movie or picture
-	LowVDDStatus        bool  // Map LowVDD to IRQ pin
-	LEDErrorCorrection  bool  // Disable open LEDs
-	DotCorrection       bool  // Analog current DotCorrection
-	CommonAddress       bool  // I2C common address for all AS1130
-	MemoryConfiguration uint8 // RAM Configuration, 1 if unset
+	LowVDDReset        bool  // Reset LowVDD at end of movie or picture
+	LowVDDStatus       bool  // Map LowVDD to IRQ pin
+	LEDErrorCorrection bool  // Disable open LEDs
+	DotCorrection      bool  // Analog current DotCorrection
+	CommonAddress      bool  // I2C common address for all AS1130
+	BlinkAndPWMSets    uint8 // Number of blink and PWM sets, 1 if unset, each uses 6 On/Off frames
 }
 
 // SetConfig sets the config register. The config cannot be changed once you
 // have written any frame data, you will need to call Reset().
 func (a *AS1130) SetConfig(c Config) error {
-	if c.MemoryConfiguration == 0 {
-		c.MemoryConfiguration = 1
+	if c.BlinkAndPWMSets == 0 {
+		c.BlinkAndPWMSets = 1
 	}
-	if v := c.MemoryConfiguration; v > 6 {
-		return fmt.Errorf("MemoryConfiguration out of range [1,6]: %d", v)
+	if v, max := c.BlinkAndPWMSets, 6; v > 6 {
+		return fmt.Errorf("BlinkAndPWMSets out of range [1,%d]: %d", max, v)
 	}
 
 	data := boolToByte(c.LowVDDReset)<<7 |
@@ -271,7 +271,7 @@ func (a *AS1130) SetConfig(c Config) error {
 		boolToByte(c.LEDErrorCorrection)<<5 |
 		boolToByte(c.DotCorrection)<<4 |
 		boolToByte(c.CommonAddress)<<3 |
-		c.MemoryConfiguration
+		c.BlinkAndPWMSets
 
 	return a.Write(RegisterControl, ControlConfig, data)
 }

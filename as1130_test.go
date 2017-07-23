@@ -263,22 +263,22 @@ var _ = Describe("as1130", func() {
 
 			It("should write non-defaults", func() {
 				config := Config{
-					LowVDDReset:         true,
-					LowVDDStatus:        true,
-					LEDErrorCorrection:  true,
-					DotCorrection:       true,
-					CommonAddress:       true,
-					MemoryConfiguration: 6,
+					LowVDDReset:        true,
+					LowVDDStatus:       true,
+					LEDErrorCorrection: true,
+					DotCorrection:      true,
+					CommonAddress:      true,
+					BlinkAndPWMSets:    6,
 				}
 				Expect(as.SetConfig(config)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "11111110")
 			})
 
-			It("should error on out of range MemoryConfiguration", func() {
+			It("should error on out of range BlinkAndPWMSets", func() {
 				config := Config{
-					MemoryConfiguration: 7,
+					BlinkAndPWMSets: 7,
 				}
-				Expect(as.SetConfig(config)).To(MatchError("MemoryConfiguration out of range [1,6]: 7"))
+				Expect(as.SetConfig(config)).To(MatchError("BlinkAndPWMSets out of range [1,6]: 7"))
 				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 		})
