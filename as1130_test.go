@@ -8,6 +8,7 @@ import (
 	"github.com/dcarley/as1130/fakes"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 )
@@ -58,34 +59,74 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("MaxFrames", func() {
+			Context("Config.BlinkAndPWMSets is unset", func() {
+				It("MaxFrames returns an error", func() {
+					max, err := as.MaxFrames()
+					Expect(err).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(max).To(Equal(uint8(0)))
+				})
+			})
+
+			DescribeTable("Config.BlinkAndPWMSets is set",
+				func(blinkAndPWMSets, maxFrames int) {
+					config := Config{BlinkAndPWMSets: uint8(blinkAndPWMSets)}
+					Expect(as.SetConfig(config)).To(Succeed())
+
+					max, err := as.MaxFrames()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(max).To(Equal(uint8(maxFrames)))
+				},
+				Entry("to 1", 1, 36),
+				Entry("to 2", 2, 30),
+				Entry("to 3", 3, 24),
+				Entry("to 4", 4, 18),
+				Entry("to 5", 5, 12),
+				Entry("to 6", 6, 6),
+			)
+		})
+
 		Describe("SetPicture", func() {
 			const (
 				register    = RegisterControl
 				subregister = ControlPicture
 			)
 
-			It("should write defaults", func() {
-				picture := Picture{}
-				Expect(as.SetPicture(picture)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000000")
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetPicture(Picture{})).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 
-			It("should write non-defaults", func() {
-				picture := Picture{
-					Blink:   true,
-					Display: true,
-					Frame:   36,
-				}
-				Expect(as.SetPicture(picture)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11100011")
-			})
+			Context("Config.BlinkAndPWMSets has been set", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 1
+				})
 
-			It("should error on too high frame", func() {
-				picture := Picture{
-					Frame: 37,
-				}
-				Expect(as.SetPicture(picture)).To(MatchError("Frame out of range [1,36]: 37"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
+				It("should write defaults", func() {
+					picture := Picture{}
+					Expect(as.SetPicture(picture)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "00000000")
+				})
+
+				It("should write non-defaults", func() {
+					picture := Picture{
+						Blink:   true,
+						Display: true,
+						Frame:   36,
+					}
+					Expect(as.SetPicture(picture)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "11100011")
+				})
+
+				It("should error on too high frame", func() {
+					picture := Picture{
+						Frame: 37,
+					}
+					Expect(as.SetPicture(picture)).To(MatchError("Frame out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 		})
 
@@ -95,28 +136,41 @@ var _ = Describe("as1130", func() {
 				subregister = ControlMovie
 			)
 
-			It("should write defaults", func() {
-				movie := Movie{}
-				Expect(as.SetMovie(movie)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000000")
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetMovie(Movie{})).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 
-			It("should write non-defaults", func() {
-				movie := Movie{
-					Blink:   true,
-					Display: true,
-					Frame:   36,
-				}
-				Expect(as.SetMovie(movie)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11100011")
-			})
+			Context("Config.BlinkAndPWMSets has been set", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 1
+				})
 
-			It("should error on too high frame", func() {
-				picture := Movie{
-					Frame: 37,
-				}
-				Expect(as.SetMovie(picture)).To(MatchError("Frame out of range [1,36]: 37"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
+				It("should write defaults", func() {
+					movie := Movie{}
+					Expect(as.SetMovie(movie)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "00000000")
+				})
+
+				It("should write non-defaults", func() {
+					movie := Movie{
+						Blink:   true,
+						Display: true,
+						Frame:   36,
+					}
+					Expect(as.SetMovie(movie)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "11100011")
+				})
+
+				It("should error on too high frame", func() {
+					picture := Movie{
+						Frame: 37,
+					}
+					Expect(as.SetMovie(picture)).To(MatchError("Frame out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 		})
 
@@ -126,28 +180,41 @@ var _ = Describe("as1130", func() {
 				subregister = ControlMovieMode
 			)
 
-			It("should write defaults", func() {
-				movieMode := MovieMode{}
-				Expect(as.SetMovieMode(movieMode)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000000")
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetMovieMode(MovieMode{})).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 
-			It("should write non-defaults", func() {
-				movieMode := MovieMode{
-					Blink:   true,
-					EndLast: true,
-					Frames:  36,
-				}
-				Expect(as.SetMovieMode(movieMode)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11100011")
-			})
+			Context("Config.BlinkAndPWMSets has been set", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 1
+				})
 
-			It("should error on too high frame", func() {
-				picture := MovieMode{
-					Frames: 37,
-				}
-				Expect(as.SetMovieMode(picture)).To(MatchError("Frames out of range [1,36]: 37"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
+				It("should write defaults", func() {
+					movieMode := MovieMode{}
+					Expect(as.SetMovieMode(movieMode)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "00000000")
+				})
+
+				It("should write non-defaults", func() {
+					movieMode := MovieMode{
+						Blink:   true,
+						EndLast: true,
+						Frames:  36,
+					}
+					Expect(as.SetMovieMode(movieMode)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "11100011")
+				})
+
+				It("should error on too high frame", func() {
+					picture := MovieMode{
+						Frames: 37,
+					}
+					Expect(as.SetMovieMode(picture)).To(MatchError("Frames out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 		})
 

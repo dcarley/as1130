@@ -54,7 +54,8 @@ func boolToByte(v bool) byte {
 
 // AS1130 is a connected controller.
 type AS1130 struct {
-	conn *i2c.Device
+	conn            *i2c.Device
+	blinkAndPWMSets uint8
 }
 
 // NewAS1130 opens a connection to an AS1130 controller. If `device` or
@@ -99,9 +100,23 @@ func (a *AS1130) Reset() error {
 		Shutdown:   true,
 	}
 	err := a.SetShutdown(reset)
+	a.blinkAndPWMSets = 0
 	time.Sleep(5 * time.Millisecond)
 
 	return err
+}
+
+// MaxFrames returns the total amount of frames that you can use after
+// Config.BlinkAndPWMSets has been set.
+func (a *AS1130) MaxFrames() (uint8, error) {
+	if a.blinkAndPWMSets == 0 {
+		return 0, fmt.Errorf("must set Config.BlinkAndPWMSets first")
+	}
+
+	const reservedFramesPerSet = 6
+	reservedFrames := (a.blinkAndPWMSets - 1) * reservedFramesPerSet
+
+	return RegisterOnOffFrameLast - reservedFrames, nil
 }
 
 // Picture Register Format (datasheet fig. 39)
@@ -116,12 +131,10 @@ func (a *AS1130) SetPicture(p Picture) error {
 	if p.Frame == 0 {
 		p.Frame = 1
 	}
-	if p.Frame > RegisterOnOffFrameLast {
-		return fmt.Errorf("Frame out of range [%d,%d]: %d",
-			RegisterOnOffFrameFirst,
-			RegisterOnOffFrameLast,
-			p.Frame,
-		)
+	if max, err := a.MaxFrames(); err != nil {
+		return err
+	} else if p.Frame > max {
+		return fmt.Errorf("Frame out of range [1,%d]: %d", max, p.Frame)
 	}
 
 	data := boolToByte(p.Blink)<<7 |
@@ -143,12 +156,10 @@ func (a *AS1130) SetMovie(m Movie) error {
 	if m.Frame == 0 {
 		m.Frame = 1
 	}
-	if m.Frame > RegisterOnOffFrameLast {
-		return fmt.Errorf("Frame out of range [%d,%d]: %d",
-			RegisterOnOffFrameFirst,
-			RegisterOnOffFrameLast,
-			m.Frame,
-		)
+	if max, err := a.MaxFrames(); err != nil {
+		return err
+	} else if m.Frame > max {
+		return fmt.Errorf("Frame out of range [1,%d]: %d", max, m.Frame)
 	}
 
 	data := boolToByte(m.Blink)<<7 |
@@ -170,11 +181,10 @@ func (a *AS1130) SetMovieMode(m MovieMode) error {
 	if m.Frames == 0 {
 		m.Frames = 1
 	}
-	if m.Frames > RegisterOnOffFrameLast {
-		return fmt.Errorf("Frames out of range [1,%d]: %d",
-			RegisterOnOffFrameLast,
-			m.Frames,
-		)
+	if max, err := a.MaxFrames(); err != nil {
+		return err
+	} else if m.Frames > max {
+		return fmt.Errorf("Frames out of range [1,%d]: %d", max, m.Frames)
 	}
 
 	data := boolToByte(m.Blink)<<7 |
@@ -273,7 +283,12 @@ func (a *AS1130) SetConfig(c Config) error {
 		boolToByte(c.CommonAddress)<<3 |
 		c.BlinkAndPWMSets
 
-	return a.Write(RegisterControl, ControlConfig, data)
+	err := a.Write(RegisterControl, ControlConfig, data)
+	if err == nil {
+		a.blinkAndPWMSets = c.BlinkAndPWMSets
+	}
+
+	return err
 }
 
 // Shutdown & Open/Short Register Format (datasheet fig. 48)
