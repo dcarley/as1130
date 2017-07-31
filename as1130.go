@@ -41,6 +41,12 @@ const (
 	ControlStatus
 )
 
+// LEDs On/Off Frame Register Format (fig. 34)
+const (
+	FrameSegmentFirst byte = 0x00
+	FrameSegmentLast  byte = 0x17
+)
+
 // boolToByte converts a boolean to a 1bit value. It allows us to provide
 // human friendly structs and not have to do runtime validation on 1bit
 // binary options.
@@ -309,4 +315,27 @@ func (a *AS1130) SetShutdown(s Shutdown) error {
 		boolToByte(!s.Shutdown)
 
 	return a.Write(RegisterControl, ControlShutdown, data)
+}
+
+// SetFrame sets an On/Off frame.
+func (a *AS1130) SetFrame(frame uint8, img Framer) error {
+	if max, err := a.MaxFrames(); err != nil {
+		return err
+	} else if frame < 1 || frame > max {
+		return fmt.Errorf("frame out of range [1,%d]: %d", max, frame)
+	}
+
+	data, err := img.OnOffBytes()
+	if err != nil {
+		return err
+	}
+
+	registerAddr := RegisterOnOffFrameFirst + (frame - 1)
+	for segmentAddr, segmentData := range data {
+		if err := a.Write(registerAddr, byte(segmentAddr), segmentData); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

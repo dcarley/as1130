@@ -2,6 +2,8 @@ package as1130
 
 import (
 	"fmt"
+	"image"
+	"image/draw"
 
 	"golang.org/x/exp/io/i2c"
 
@@ -372,6 +374,48 @@ var _ = Describe("as1130", func() {
 				}
 				Expect(as.SetShutdown(shutdown)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "00011100")
+			})
+		})
+
+		Describe("SetFrame", func() {
+			var frame Frame12x11
+
+			BeforeEach(func() {
+				frame = NewFrame12x11()
+				draw.Draw(frame, frame.Bounds(), &image.Uniform{On}, image.ZP, draw.Src)
+			})
+
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetFrame(0, frame)).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+
+			Context("Config.BlinkAndPWMSets has been set", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 1
+				})
+
+				It("should write first frame", func() {
+					Expect(as.SetFrame(1, frame)).To(Succeed())
+					Expect(writeBuf.Contents()).To(HaveLen(4 * int(FrameSegmentLast-FrameSegmentFirst+1)))
+				})
+
+				It("should write last frame", func() {
+					Expect(as.SetFrame(36, frame)).To(Succeed())
+					Expect(writeBuf.Contents()).To(HaveLen(4 * int(FrameSegmentLast-FrameSegmentFirst+1)))
+				})
+
+				It("should error on zero indexed frame", func() {
+					Expect(as.SetFrame(0, frame)).To(MatchError("frame out of range [1,36]: 0"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+
+				It("should error on too high frame", func() {
+					Expect(as.SetFrame(37, frame)).To(MatchError("frame out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 		})
 	})
