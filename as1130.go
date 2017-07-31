@@ -42,9 +42,17 @@ const (
 )
 
 // LEDs On/Off Frame Register Format (fig. 34)
+// and
+// LEDs Blink Frame Register Format (fig. 35)
 const (
 	FrameSegmentFirst byte = 0x00
 	FrameSegmentLast  byte = 0x17
+)
+
+// LEDs PWM Register Format (fig. 36)
+const (
+	PWMSegmentFirst byte = 0x18
+	PWMSegmentLast  byte = 0x9B
 )
 
 // boolToByte converts a boolean to a 1bit value. It allows us to provide
@@ -333,6 +341,44 @@ func (a *AS1130) SetFrame(frame uint8, img Framer) error {
 	registerAddr := RegisterOnOffFrameFirst + (frame - 1)
 	for segmentAddr, segmentData := range data {
 		if err := a.Write(registerAddr, byte(segmentAddr), segmentData); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SetBlinkAndPWMSet sets a blink and PWM set.
+func (a *AS1130) SetBlinkAndPWMSet(set uint8, blink Framer, pwm Framer) error {
+	if max := a.blinkAndPWMSets; max == 0 {
+		return fmt.Errorf("must set Config.BlinkAndPWMSets first")
+	} else if set < 1 || set > max {
+		return fmt.Errorf("set out of range [1,%d]: %d", max, set)
+	}
+
+	blinkData, err := blink.OnOffBytes()
+	if err != nil {
+		return err
+	}
+	pwmData, err := pwm.PWMBytes()
+	if err != nil {
+		return err
+	}
+
+	registerAddr := RegisterBlinkPWMFrameFirst + (set - 1)
+
+	var blinkAddr byte
+	for i, blinkData := range blinkData {
+		blinkAddr = FrameSegmentFirst + byte(i)
+		if err := a.Write(registerAddr, blinkAddr, blinkData); err != nil {
+			return err
+		}
+	}
+
+	var pwmAddr byte
+	for i, pwmData := range pwmData {
+		pwmAddr = PWMSegmentFirst + byte(i)
+		if err := a.Write(registerAddr, pwmAddr, pwmData); err != nil {
 			return err
 		}
 	}

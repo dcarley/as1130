@@ -14,6 +14,7 @@ var (
 // Framer renders an image into frame data.
 type Framer interface {
 	OnOffBytes() ([24]byte, error)
+	PWMBytes() ([132]byte, error)
 }
 
 // rect12x11 is the size of Frame12x11.
@@ -32,7 +33,7 @@ func NewFrame12x11() Frame12x11 {
 }
 
 // OnOffBytes renders On/Off LED data. Pixels with colour values greater
-// than 0 are considered on.
+// than 0 are considered on or blinking.
 func (f Frame12x11) OnOffBytes() ([24]byte, error) {
 	data := [24]byte{}
 	if actual, expected := f.Bounds(), rect12x11(); actual != expected {
@@ -60,6 +61,25 @@ func (f Frame12x11) OnOffBytes() ([24]byte, error) {
 	return data, nil
 }
 
+// PWMBytes renders PWM (brightness) LED data. Each pixel has 255 steps.
+func (f Frame12x11) PWMBytes() ([132]byte, error) {
+	data := [132]byte{}
+	if f.Bounds() != rect12x11() {
+		return data, fmt.Errorf("XXX")
+	}
+
+	var dataIndex uint8
+	size := f.Bounds()
+	for x := size.Min.X; x < size.Max.X; x++ {
+		for y := size.Min.Y; y < size.Max.Y; y++ {
+			data[dataIndex] = f.GrayAt(x, y).Y
+			dataIndex++
+		}
+	}
+
+	return data, nil
+}
+
 // rect24x5 is the size of Frame24x5.
 func rect24x5() image.Rectangle {
 	return image.Rect(0, 0, 24, 5)
@@ -77,7 +97,7 @@ func NewFrame24x5() Frame24x5 {
 }
 
 // OnOffBytes renders On/Off LED data. Pixels with colour values greater
-// than 0 are considered on.
+// than 0 are considered on or blinking.
 func (f Frame24x5) OnOffBytes() ([24]byte, error) {
 	data := [24]byte{}
 	if actual, expected := f.Bounds(), rect24x5(); actual != expected {
@@ -101,6 +121,29 @@ func (f Frame24x5) OnOffBytes() ([24]byte, error) {
 				}
 				shift++
 			}
+		}
+	}
+
+	return data, nil
+}
+
+// PWMBytes renders PWM (brightness) LED data. Each pixel has 255 steps.
+func (f Frame24x5) PWMBytes() ([132]byte, error) {
+	data := [132]byte{}
+	if f.Bounds() != rect24x5() {
+		return data, fmt.Errorf("XXX")
+	}
+
+	var dataIndex uint8
+	size := f.Bounds()
+	for x := size.Min.X; x < size.Max.X; x++ {
+		for y := size.Min.Y; y < size.Max.Y; y++ {
+			data[dataIndex] = f.GrayAt(x, y).Y
+			dataIndex++
+		}
+
+		if x%2 == 1 {
+			dataIndex++
 		}
 	}
 

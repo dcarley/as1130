@@ -418,5 +418,55 @@ var _ = Describe("as1130", func() {
 				})
 			})
 		})
+
+		Describe("SetBlinkAndPWMSet", func() {
+			const (
+				commandsPerSegment = 4
+				blinkSegments      = int(FrameSegmentLast-FrameSegmentFirst) + 1
+				pwmSegments        = int(PWMSegmentLast-PWMSegmentFirst) + 1
+				totalSegments      = blinkSegments + pwmSegments
+			)
+
+			var blink, pwm Frame12x11
+
+			BeforeEach(func() {
+				blink = NewFrame12x11()
+				pwm = NewFrame12x11()
+				draw.Draw(pwm, pwm.Bounds(), &image.Uniform{On}, image.ZP, draw.Src)
+			})
+
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetBlinkAndPWMSet(0, blink, pwm)).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+
+			Context("Config.BlinkAndPWMSets set to 6", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 6
+				})
+
+				It("should write first set", func() {
+					Expect(as.SetBlinkAndPWMSet(1, blink, pwm)).To(Succeed())
+					Expect(writeBuf.Contents()).To(HaveLen(commandsPerSegment * totalSegments))
+				})
+
+				It("should write last set", func() {
+					Expect(as.SetBlinkAndPWMSet(6, blink, pwm)).To(Succeed())
+					Expect(writeBuf.Contents()).To(HaveLen(commandsPerSegment * totalSegments))
+				})
+
+				It("should error on zero indexed frame", func() {
+					Expect(as.SetBlinkAndPWMSet(0, blink, pwm)).To(MatchError("set out of range [1,6]: 0"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+
+				It("should error on too high frame", func() {
+					Expect(as.SetBlinkAndPWMSet(7, blink, pwm)).To(MatchError("set out of range [1,6]: 7"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+		})
 	})
 })
