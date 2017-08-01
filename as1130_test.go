@@ -229,19 +229,19 @@ var _ = Describe("as1130", func() {
 			It("should write defaults", func() {
 				frameTime := FrameTime{}
 				Expect(as.SetFrameTime(frameTime)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "01000000")
+				TestCommand(writeBuf, register, subregister, "01100000")
 			})
 
 			It("should write non-defaults", func() {
 				frameTime := FrameTime{
 					Fade:        true,
 					ScrollRight: true,
-					BlockSize:   true,
+					Scroll12x11: true,
 					Scrolling:   true,
 					Delay:       15,
 				}
 				Expect(as.SetFrameTime(frameTime)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "10111111")
+				TestCommand(writeBuf, register, subregister, "10011111")
 			})
 
 			It("should error on out of range Delay", func() {
