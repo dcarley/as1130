@@ -210,11 +210,11 @@ func (a *AS1130) SetMovieMode(m MovieMode) error {
 
 // FrameTime & Scroll Register Format (datasheet fig. 42)
 type FrameTime struct {
-	Fade       bool  // Fade at end of frame
-	ScrollLeft bool  // Scroll left instead of right
-	BlockSize  bool  // Scroll in 5 LED blocks
-	Scrolling  bool  // Scroll digits at play movie
-	Delay      uint8 // Delay between frame change in a movie, multiple of 32.5ms
+	Fade        bool  // Fade at end of frame
+	ScrollRight bool  // Scroll right instead of left
+	BlockSize   bool  // Scroll in 5 LED blocks
+	Scrolling   bool  // Scroll digits at play movie
+	Delay       uint8 // Delay between frame change in a movie, multiple of 32.5ms
 }
 
 // SetFrameTime sets the frame time register.
@@ -224,7 +224,7 @@ func (a *AS1130) SetFrameTime(f FrameTime) error {
 	}
 
 	data := boolToByte(f.Fade)<<7 |
-		boolToByte(f.ScrollLeft)<<6 |
+		boolToByte(!f.ScrollRight)<<6 |
 		boolToByte(f.BlockSize)<<5 |
 		boolToByte(f.Scrolling)<<4 |
 		f.Delay
