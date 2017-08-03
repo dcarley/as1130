@@ -65,9 +65,7 @@ var _ = Describe("as1130", func() {
 			)
 
 			It("should write defaults", func() {
-				picture := Picture{
-					Frame: 1,
-				}
+				picture := Picture{}
 				Expect(as.SetPicture(picture)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "00000000")
 			})
@@ -80,14 +78,6 @@ var _ = Describe("as1130", func() {
 				}
 				Expect(as.SetPicture(picture)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "11100011")
-			})
-
-			It("should error on zero indexed frame", func() {
-				picture := Picture{
-					Frame: 0,
-				}
-				Expect(as.SetPicture(picture)).To(MatchError("Frame out of range [1,36]: 0"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 
 			It("should error on too high frame", func() {
@@ -106,9 +96,7 @@ var _ = Describe("as1130", func() {
 			)
 
 			It("should write defaults", func() {
-				movie := Movie{
-					Frame: 1,
-				}
+				movie := Movie{}
 				Expect(as.SetMovie(movie)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "00000000")
 			})
@@ -121,14 +109,6 @@ var _ = Describe("as1130", func() {
 				}
 				Expect(as.SetMovie(movie)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "11100011")
-			})
-
-			It("should error on zero indexed frame", func() {
-				picture := Movie{
-					Frame: 0,
-				}
-				Expect(as.SetMovie(picture)).To(MatchError("Frame out of range [1,36]: 0"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
 			})
 
 			It("should error on too high frame", func() {

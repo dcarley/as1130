@@ -93,12 +93,15 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 type Picture struct {
 	Blink   bool  // All LEDs in blink mode during display picture
 	Display bool  // Display picture
-	Frame   uint8 // Number of picture frame
+	Frame   uint8 // Number of picture frame, 1 if unset
 }
 
 // SetPicture sets the picture register.
 func (a *AS1130) SetPicture(p Picture) error {
-	if p.Frame < RegisterOnOffFrameFirst || p.Frame > RegisterOnOffFrameLast {
+	if p.Frame == 0 {
+		p.Frame = 1
+	}
+	if p.Frame > RegisterOnOffFrameLast {
 		return fmt.Errorf("Frame out of range [%d,%d]: %d",
 			RegisterOnOffFrameFirst,
 			RegisterOnOffFrameLast,
@@ -117,12 +120,15 @@ func (a *AS1130) SetPicture(p Picture) error {
 type Movie struct {
 	Blink   bool  // All LEDs in blink mode during play movie
 	Display bool  // Display movie
-	Frame   uint8 // Number of first frame in movie
+	Frame   uint8 // Number of first frame in movie, 1 if unset
 }
 
 // SetMovie sets the movie register.
 func (a *AS1130) SetMovie(m Movie) error {
-	if m.Frame < RegisterOnOffFrameFirst || m.Frame > RegisterOnOffFrameLast {
+	if m.Frame == 0 {
+		m.Frame = 1
+	}
+	if m.Frame > RegisterOnOffFrameLast {
 		return fmt.Errorf("Frame out of range [%d,%d]: %d",
 			RegisterOnOffFrameFirst,
 			RegisterOnOffFrameLast,
