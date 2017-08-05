@@ -15,6 +15,7 @@ var (
 type Framer interface {
 	OnOffBytes() ([24]byte, error)
 	PWMBytes() ([132]byte, error)
+	PWMSetNumber() uint8
 }
 
 // rect12x11 is the size of Frame12x11.
@@ -25,11 +26,14 @@ func rect12x11() image.Rectangle {
 // Frame12x11 is a frame for a 12x11 matrix with every LED connected.
 type Frame12x11 struct {
 	*image.Gray
+	PWMSet uint8 // PWM set to associate with the frame
 }
 
 // NewFrame12x11 creates a new Frame12x11 of the correct size.
 func NewFrame12x11() Frame12x11 {
-	return Frame12x11{image.NewGray(rect12x11())}
+	return Frame12x11{
+		Gray: image.NewGray(rect12x11()),
+	}
 }
 
 // OnOffBytes renders On/Off LED data. Pixels with colour values greater
@@ -80,6 +84,11 @@ func (f Frame12x11) PWMBytes() ([132]byte, error) {
 	return data, nil
 }
 
+// PWMSetNumber returns the PWM set to associate with the frame.
+func (f Frame12x11) PWMSetNumber() uint8 {
+	return f.PWMSet
+}
+
 // rect24x5 is the size of Frame24x5.
 func rect24x5() image.Rectangle {
 	return image.Rect(0, 0, 24, 5)
@@ -89,11 +98,14 @@ func rect24x5() image.Rectangle {
 // is disconnected.
 type Frame24x5 struct {
 	*image.Gray
+	PWMSet uint8 // PWM set to associate with the frame
 }
 
 // NewFrame24x5 creates a new Frame24x5 of the correct size.
 func NewFrame24x5() Frame24x5 {
-	return Frame24x5{image.NewGray(rect24x5())}
+	return Frame24x5{
+		Gray: image.NewGray(rect24x5()),
+	}
 }
 
 // OnOffBytes renders On/Off LED data. Pixels with colour values greater
@@ -148,4 +160,9 @@ func (f Frame24x5) PWMBytes() ([132]byte, error) {
 	}
 
 	return data, nil
+}
+
+// PWMSetNumber returns the PWM set to associate with the frame.
+func (f Frame24x5) PWMSetNumber() uint8 {
+	return f.PWMSet
 }

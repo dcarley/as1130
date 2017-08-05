@@ -392,7 +392,7 @@ var _ = Describe("as1130", func() {
 				})
 			})
 
-			Context("Config.BlinkAndPWMSets has been set", func() {
+			Context("Config.BlinkAndPWMSets set to 1", func() {
 				BeforeEach(func() {
 					as.blinkAndPWMSets = 1
 				})
@@ -414,6 +414,37 @@ var _ = Describe("as1130", func() {
 
 				It("should error on too high frame", func() {
 					Expect(as.SetFrame(37, frame)).To(MatchError("frame out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+
+			Context("Config.BlinkAndPWMSets set to 6", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 6
+				})
+
+				DescribeTable("PWM set",
+					func(pwmSet int, secondSegmentData string) {
+						frame.PWMSet = uint8(pwmSet)
+						Expect(as.SetFrame(1, frame)).To(Succeed())
+						Expect(
+							fmt.Sprintf("%08b", writeBuf.Contents()[7]),
+						).To(
+							Equal(secondSegmentData),
+						)
+					},
+					Entry("uses set 1 when default 0", 0, "00000111"),
+					Entry("uses set 1", 1, "00000111"),
+					Entry("uses set 2", 2, "00100111"),
+					Entry("uses set 3", 3, "01000111"),
+					Entry("uses set 4", 4, "01100111"),
+					Entry("uses set 5", 5, "10000111"),
+					Entry("uses set 6", 6, "10100111"),
+				)
+
+				It("should error on too high PWM set", func() {
+					frame.PWMSet = 7
+					Expect(as.SetFrame(1, frame)).To(MatchError("PWM set out of range [1,6]: 7"))
 					Expect(writeBuf.Contents()).To(BeEmpty())
 				})
 			})

@@ -338,6 +338,15 @@ func (a *AS1130) SetFrame(frame uint8, img Framer) error {
 		return err
 	}
 
+	pwmSet := img.PWMSetNumber()
+	if pwmSet == 0 {
+		pwmSet = 1
+	}
+	if max := a.blinkAndPWMSets; pwmSet > max {
+		return fmt.Errorf("PWM set out of range [1,%d]: %d", max, pwmSet)
+	}
+	data[1] |= (pwmSet - 1) << 5
+
 	registerAddr := RegisterOnOffFrameFirst + (frame - 1)
 	for segmentAddr, segmentData := range data {
 		if err := a.Write(registerAddr, byte(segmentAddr), segmentData); err != nil {

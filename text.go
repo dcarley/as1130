@@ -50,7 +50,7 @@ func TextFrames(text string) ([]Frame24x5, error) {
 	partialFrames := float64(f.MeasureString(text)>>6) / float64(rect.Max.X)
 	wholeFrames := int(math.Ceil(partialFrames)) + spacerFrames
 
-	wideFrame := Frame24x5{image.NewGray(
+	wideFrame := Frame24x5{Gray: image.NewGray(
 		image.Rect(0, 0, rect.Max.X*wholeFrames, rect.Max.Y),
 	)}
 
