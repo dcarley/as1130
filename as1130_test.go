@@ -427,6 +427,74 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetInterruptMask", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlInterruptMask
+			)
+
+			It("should write defaults", func() {
+				mask := InterruptMask{}
+				Expect(as.SetInterruptMask(mask)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write non-defaults", func() {
+				mask := InterruptMask{
+					Frame:        true,
+					Watchdog:     true,
+					PowerOrReset: true,
+					OverTemp:     true,
+					LowVDD:       true,
+					OpenError:    true,
+					ShortError:   true,
+					MovieFinish:  true,
+				}
+				Expect(as.SetInterruptMask(mask)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "11111111")
+			})
+		})
+
+		Describe("SetInterruptFrame", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlInterruptFrame
+			)
+
+			Context("Config.BlinkAndPWMSets has not been set", func() {
+				It("should error", func() {
+					Expect(as.SetInterruptFrame(1)).To(MatchError("must set Config.BlinkAndPWMSets first"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+
+			Context("Config.BlinkAndPWMSets set to 1", func() {
+				BeforeEach(func() {
+					as.blinkAndPWMSets = 1
+				})
+
+				It("should write first frame", func() {
+					Expect(as.SetInterruptFrame(1)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "00000000")
+				})
+
+				It("should write last frame", func() {
+					Expect(as.SetInterruptFrame(36)).To(Succeed())
+					TestCommand(writeBuf, register, subregister, "00100011")
+				})
+
+				It("should error on zero indexed frame", func() {
+					Expect(as.SetInterruptFrame(0)).To(MatchError("frame out of range [1,36]: 0"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+
+				It("should error on too high frame", func() {
+					Expect(as.SetInterruptFrame(37)).To(MatchError("frame out of range [1,36]: 37"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
+			})
+		})
+
 		Describe("SetShutdown", func() {
 			const (
 				register    = RegisterControl

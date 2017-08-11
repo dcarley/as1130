@@ -350,6 +350,44 @@ func (a *AS1130) SetConfig(c Config) error {
 	return err
 }
 
+// Interrupt Mask Register Format (datasheet fig. 46)
+type InterruptMask struct {
+	Frame        bool // Trigger IRQ when frame defined by SetInterruptFrame is displayed
+	Watchdog     bool // Trigger IRQ when the I²C watchdog triggers
+	PowerOrReset bool // Trigger IRQ when power or reset has occurred
+	OverTemp     bool // Trigger IRQ when the overtemperature limit is reached
+	LowVDD       bool // Trigger IRQ when VDD is too low for used LEDs
+	OpenError    bool // Trigger IRQ when an error on the open test occurs
+	ShortError   bool // Trigger IRQ when an error on the short test occurs
+	MovieFinish  bool // Trigger IRQ when movie is finished
+}
+
+// SetInterruptMask sets the interrupt mask register.
+func (a *AS1130) SetInterruptMask(i InterruptMask) error {
+	data := boolToByte(i.Frame)<<7 |
+		boolToByte(i.Watchdog)<<6 |
+		boolToByte(i.PowerOrReset)<<5 |
+		boolToByte(i.OverTemp)<<4 |
+		boolToByte(i.LowVDD)<<3 |
+		boolToByte(i.OpenError)<<2 |
+		boolToByte(i.ShortError)<<1 |
+		boolToByte(i.MovieFinish)
+
+	return a.Write(RegisterControl, ControlInterruptMask, data)
+}
+
+// SetInterruptFrame sets the interrupt frame register. This should be used
+// in combination with InterruptMask.Frame
+func (a *AS1130) SetInterruptFrame(lastFrame uint8) error {
+	if max, err := a.MaxFrames(); err != nil {
+		return err
+	} else if lastFrame < 1 || lastFrame > max {
+		return fmt.Errorf("frame out of range [1,%d]: %d", max, lastFrame)
+	}
+
+	return a.Write(RegisterControl, ControlInterruptFrame, lastFrame-1)
+}
+
 // Shutdown & Open/Short Register Format (datasheet fig. 48)
 type Shutdown struct {
 	TestAll    bool // LED open/short test is performed on all LED locations
