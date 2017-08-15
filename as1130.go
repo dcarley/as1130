@@ -41,6 +41,17 @@ const (
 	ControlStatus
 )
 
+// ClockFreq is a clock frequency value.
+type ClockFreq byte
+
+// Clock synchronization frequencies.
+const (
+	Clock1MHz ClockFreq = iota
+	Clock500kHz
+	Clock125kHz
+	Clock32kHz
+)
+
 // LEDs On/Off Frame Register Format (fig. 34)
 // and
 // LEDs Blink Frame Register Format (fig. 35)
@@ -64,6 +75,18 @@ func boolToByte(v bool) byte {
 	}
 
 	return 0
+}
+
+// validateClockFreq checks whether a clock out frequency is valid.
+func validateClockFreq(freq ClockFreq) bool {
+	validFreqs := []ClockFreq{Clock1MHz, Clock500kHz, Clock125kHz, Clock32kHz}
+	for _, validFreq := range validFreqs {
+		if freq == validFreq {
+			return true
+		}
+	}
+
+	return false
 }
 
 // AS1130 is a connected controller.
@@ -406,6 +429,29 @@ func (a *AS1130) SetShutdown(s Shutdown) error {
 		boolToByte(!s.Shutdown)
 
 	return a.Write(RegisterControl, ControlShutdown, data)
+}
+
+// CLK Synchronization Register Format (datasheet fig. 50)
+type ClockSync struct {
+	ClockOutFreq ClockFreq // Adjustable clock out frequency
+	SyncOut      bool      // Internal oscillator is used and made available on the SYNC pin
+	SyncIn       bool      // Internal oscillator is disabled and input from SYNC pin is used
+}
+
+// SetClockSync sets the Clock Synchronization register.
+func (a *AS1130) SetClockSync(c ClockSync) error {
+	if !validateClockFreq(c.ClockOutFreq) {
+		return fmt.Errorf("invalid ClockOutFreq: %d", c.ClockOutFreq)
+	}
+	if c.SyncOut && c.SyncIn {
+		return fmt.Errorf("SyncOut and SyncIn cannot be set at the same time")
+	}
+
+	data := byte(c.ClockOutFreq)<<2 |
+		boolToByte(c.SyncOut)<<1 |
+		boolToByte(c.SyncIn)
+
+	return a.Write(RegisterControl, ControlClockSync, data)
 }
 
 // SetFrame sets an On/Off frame.

@@ -520,6 +520,60 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("SetClockSync", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlClockSync
+			)
+
+			It("should write defaults", func() {
+				clockSync := ClockSync{}
+				Expect(as.SetClockSync(clockSync)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000000")
+			})
+
+			It("should write ClockOutFreq as 32kHz", func() {
+				clockSync := ClockSync{
+					ClockOutFreq: Clock32kHz,
+				}
+				Expect(as.SetClockSync(clockSync)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00001100")
+			})
+
+			It("should error on invalid ClockOutFreq", func() {
+				clockSync := ClockSync{
+					ClockOutFreq: Clock32kHz + 1,
+				}
+				Expect(as.SetClockSync(clockSync)).To(MatchError("invalid ClockOutFreq: 4"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+
+			It("should write SyncOut", func() {
+				clockSync := ClockSync{
+					SyncOut: true,
+				}
+				Expect(as.SetClockSync(clockSync)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000010")
+			})
+
+			It("should write SyncIn", func() {
+				clockSync := ClockSync{
+					SyncIn: true,
+				}
+				Expect(as.SetClockSync(clockSync)).To(Succeed())
+				TestCommand(writeBuf, register, subregister, "00000001")
+			})
+
+			It("should error on conflicting SyncOut and SyncIn", func() {
+				clockSync := ClockSync{
+					SyncOut: true,
+					SyncIn:  true,
+				}
+				Expect(as.SetClockSync(clockSync)).To(MatchError("SyncOut and SyncIn cannot be set at the same time"))
+				Expect(writeBuf.Contents()).To(BeEmpty())
+			})
+		})
+
 		Describe("SetFrame", func() {
 			const commandsPerFrame = int(FrameSegmentLast - FrameSegmentFirst + 1)
 			var frame *Frame12x11
