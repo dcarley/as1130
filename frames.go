@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 )
 
 var (
@@ -13,6 +14,7 @@ var (
 
 // Framer renders an image into frame data.
 type Framer interface {
+	draw.Image
 	OnOffBytes() ([24]byte, error)
 	PWMBytes() ([132]byte, error)
 	PWMSetNumber() uint8
