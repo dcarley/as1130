@@ -28,7 +28,7 @@ func init() {
 }
 
 func scrollText(text string) error {
-	as, err := as1130.NewAS1130("", 0)
+	as, err := as1130.NewAS1130(Device, Address)
 	if err != nil {
 		return err
 	}
