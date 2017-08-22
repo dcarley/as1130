@@ -17,6 +17,9 @@ var textCmd = &cobra.Command{
 	Long:  "Scroll text across the display",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if Size != Size24x5 {
+			log.Fatal("only 24x5 size is supported for this command")
+		}
 		if err := scrollText(strings.Join(args, " ")); err != nil {
 			log.Fatal(err)
 		}
@@ -60,9 +63,9 @@ func scrollText(text string) error {
 		return fmt.Errorf("message requires more than %d frames: %d", max, count)
 	}
 
-	pwm := as1130.NewFrame24x5()
+	pwm := NewFrame()
 	draw.Draw(pwm, pwm.Bounds(), &image.Uniform{as1130.On}, image.ZP, draw.Src)
-	if err := as.SetBlinkAndPWMSet(1, as1130.NewFrame24x5(), pwm); err != nil {
+	if err := as.SetBlinkAndPWMSet(1, NewFrame(), pwm); err != nil {
 		return err
 	}
 

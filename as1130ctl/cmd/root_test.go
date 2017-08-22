@@ -41,4 +41,33 @@ var _ = Describe("Root", func() {
 			)))
 		})
 	})
+
+	Describe("size argument", func() {
+		It("should print default", func() {
+			command := exec.Command(cliPath, "help")
+			session, err := Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).ShouldNot(HaveOccurred())
+			Eventually(session).Should(Exit(0))
+			Eventually(session.Out).Should(gbytes.Say(regexp.QuoteMeta(
+				`size of the frame: 24x5, 12x11 (default 24x5)`,
+			)))
+		})
+
+		It("should accept valid size argument", func() {
+			command := exec.Command(cliPath, "-s", "12x11")
+			session, err := Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).ShouldNot(HaveOccurred())
+			Eventually(session).Should(Exit(0))
+		})
+
+		It("should reject invalid size argument", func() {
+			command := exec.Command(cliPath, "-s", "1x1")
+			session, err := Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).ShouldNot(HaveOccurred())
+			Eventually(session).Should(Exit(1))
+			Eventually(session.Err).Should(gbytes.Say(regexp.QuoteMeta(
+				`invalid argument "1x1" for "-s, --size" flag: invalid size`,
+			)))
+		})
+	})
 })
