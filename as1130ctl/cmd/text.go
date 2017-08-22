@@ -40,13 +40,7 @@ func scrollText(text string) error {
 	if err := as.Reset(); err != nil {
 		return err
 	}
-	if err := as.SetConfig(as1130.Config{}); err != nil {
-		return err
-	}
-	if err := as.SetCurrentSource(as1130.CurrentSourceDefault); err != nil {
-		return err
-	}
-	if err := as.SetDisplayOption(as1130.DisplayOption{}); err != nil {
+	if err := as.Init(1); err != nil {
 		return err
 	}
 
@@ -86,7 +80,7 @@ func scrollText(text string) error {
 		return err
 	}
 
-	if err := as.SetShutdown(as1130.Shutdown{}); err != nil {
+	if err := as.Start(); err != nil {
 		return err
 	}
 

@@ -106,6 +106,28 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	return a.conn.WriteReg(subregister, []byte{data})
 }
 
+// Init performs the startup sequence with default settings. You still need
+// to call Start() when all frames and related settings have been set.
+func (a *AS1130) Init(blinkAndPWMSets uint8) error {
+	if err := a.SetConfig(Config{BlinkAndPWMSets: blinkAndPWMSets}); err != nil {
+		return err
+	}
+	if err := a.SetCurrentSource(CurrentSourceDefault); err != nil {
+		return err
+	}
+	if err := a.SetDisplayOption(DisplayOption{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Start takes the device out of shutdown mode, enables the display, and
+// starts the state machine.
+func (a *AS1130) Start() error {
+	return a.SetShutdown(Shutdown{})
+}
+
 // Reset performs a shutdown and resets all settings, then waits for the
 // device to become ready again. You will need to call Init() afterwards.
 func (a *AS1130) Reset() error {
