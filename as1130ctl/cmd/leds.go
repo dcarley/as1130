@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
-	"io"
 	"log"
-	"os"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/dcarley/as1130"
 	"github.com/spf13/cobra"
+)
+
+var (
+	ledsAllOn bool
 )
 
 var ledsCmd = &cobra.Command{
@@ -25,6 +26,11 @@ No co-ordinates will result in all LEDs being turned off.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		frame := NewFrame()
+
+		if ledsAllOn {
+			draw.Draw(frame, frame.Bounds(), &image.Uniform{as1130.On}, image.ZP, draw.Src)
+		}
+
 		points, err := parseArgs(args, frame.Bounds())
 		if err != nil {
 			log.Fatal(err)
@@ -37,6 +43,7 @@ No co-ordinates will result in all LEDs being turned off.
 }
 
 func init() {
+	ledsCmd.Flags().BoolVar(&ledsAllOn, "all", false, "Turn all LEDs on")
 	RootCmd.AddCommand(ledsCmd)
 }
 
