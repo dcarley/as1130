@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"io"
 	"log"
+	"os"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/dcarley/as1130"
 	"github.com/spf13/cobra"
 )
 
 var (
-	ledsAllOn bool
+	ledsLayout bool
+	ledsAllOn  bool
 )
 
 var ledsCmd = &cobra.Command{
@@ -26,6 +30,11 @@ No co-ordinates will result in all LEDs being turned off.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		frame := NewFrame()
+
+		if ledsLayout {
+			printLayout(frame.Bounds(), os.Stdout)
+			return
+		}
 
 		if ledsAllOn {
 			draw.Draw(frame, frame.Bounds(), &image.Uniform{as1130.On}, image.ZP, draw.Src)
@@ -43,8 +52,23 @@ No co-ordinates will result in all LEDs being turned off.
 }
 
 func init() {
+	ledsCmd.Flags().BoolVarP(&ledsLayout, "layout", "l", false, "Show layout")
 	ledsCmd.Flags().BoolVar(&ledsAllOn, "all", false, "Turn all LEDs on")
 	RootCmd.AddCommand(ledsCmd)
+}
+
+func printLayout(bounds image.Rectangle, writer io.Writer) {
+	w := tabwriter.NewWriter(writer, 0, 0, 1, ' ', tabwriter.Debug)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			fmt.Fprintf(w, "\t %d,%d", x+1, y+1)
+
+		}
+		fmt.Fprintf(w, "\t\n")
+	}
+
+	w.Flush()
 }
 
 func parseArgs(args []string, bounds image.Rectangle) ([]image.Point, error) {
