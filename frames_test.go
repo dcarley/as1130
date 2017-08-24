@@ -47,7 +47,7 @@ var _ = Describe("Frames", func() {
 	}
 
 	Describe("Frame12x11", func() {
-		var frame Frame12x11
+		var frame *Frame12x11
 
 		BeforeEach(func() {
 			frame = NewFrame12x11()
@@ -159,10 +159,18 @@ var _ = Describe("Frames", func() {
 				}))
 			})
 		})
+
+		Describe("PWM sets", func() {
+			It("should set and return PWM set", func() {
+				const set uint8 = 6
+				frame.SetPWMSet(set)
+				Expect(frame.PWMSet()).To(Equal(set))
+			})
+		})
 	})
 
 	Describe("FrameLEDs24x5", func() {
-		var frame Frame24x5
+		var frame *Frame24x5
 
 		BeforeEach(func() {
 			frame = NewFrame24x5()
@@ -271,6 +279,14 @@ var _ = Describe("Frames", func() {
 					128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 0,
 					128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 0,
 				}))
+			})
+		})
+
+		Describe("PWM sets", func() {
+			It("should set and return PWM set", func() {
+				const set uint8 = 6
+				frame.SetPWMSet(set)
+				Expect(frame.PWMSet()).To(Equal(set))
 			})
 		})
 	})

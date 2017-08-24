@@ -360,7 +360,7 @@ func (a *AS1130) SetFrame(frame uint8, img Framer) error {
 		return err
 	}
 
-	pwmSet := img.PWMSetNumber()
+	pwmSet := img.PWMSet()
 	if pwmSet == 0 {
 		pwmSet = 1
 	}

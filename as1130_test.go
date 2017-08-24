@@ -378,7 +378,7 @@ var _ = Describe("as1130", func() {
 		})
 
 		Describe("SetFrame", func() {
-			var frame Frame12x11
+			var frame *Frame12x11
 
 			BeforeEach(func() {
 				frame = NewFrame12x11()
@@ -425,7 +425,7 @@ var _ = Describe("as1130", func() {
 
 				DescribeTable("PWM set",
 					func(pwmSet int, secondSegmentData string) {
-						frame.PWMSet = uint8(pwmSet)
+						frame.SetPWMSet(uint8(pwmSet))
 						Expect(as.SetFrame(1, frame)).To(Succeed())
 						Expect(
 							fmt.Sprintf("%08b", writeBuf.Contents()[7]),
@@ -443,7 +443,7 @@ var _ = Describe("as1130", func() {
 				)
 
 				It("should error on too high PWM set", func() {
-					frame.PWMSet = 7
+					frame.SetPWMSet(7)
 					Expect(as.SetFrame(1, frame)).To(MatchError("PWM set out of range [1,6]: 7"))
 					Expect(writeBuf.Contents()).To(BeEmpty())
 				})
@@ -458,7 +458,7 @@ var _ = Describe("as1130", func() {
 				totalSegments      = blinkSegments + pwmSegments
 			)
 
-			var blink, pwm Frame12x11
+			var blink, pwm *Frame12x11
 
 			BeforeEach(func() {
 				blink = NewFrame12x11()

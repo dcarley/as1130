@@ -32,12 +32,12 @@ func loadFont() (font.Face, error) {
 
 // TextFrames renders some text into a slice of frames that can be scrolled
 // across a 24x5 display.
-func TextFrames(text string) ([]Frame24x5, error) {
+func TextFrames(text string) ([]*Frame24x5, error) {
 	const spacerFrames = 1
 
 	face, err := loadFont()
 	if err != nil {
-		return []Frame24x5{}, err
+		return []*Frame24x5{}, err
 	}
 
 	rect := rect24x5()
@@ -58,7 +58,7 @@ func TextFrames(text string) ([]Frame24x5, error) {
 	f.DrawString(text)
 
 	advance := rect.Max.X
-	frames := make([]Frame24x5, wholeFrames)
+	frames := make([]*Frame24x5, wholeFrames)
 	for i, _ := range frames {
 		frame := NewFrame24x5()
 		draw.Draw(frame, frame.Bounds(), wideFrame.SubImage(rect), rect.Min, draw.Src)

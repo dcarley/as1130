@@ -10,7 +10,7 @@ import (
 var _ = Describe("Text", func() {
 	Describe("TextFrames", func() {
 		const text = "hello world as1130 test"
-		var frames []Frame24x5
+		var frames []*Frame24x5
 
 		BeforeEach(func() {
 			var err error
