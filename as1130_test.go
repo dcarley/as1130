@@ -17,6 +17,18 @@ import (
 )
 
 var _ = Describe("as1130", func() {
+	TestReadCommand := func(buf *gbytes.Buffer, register, subregister byte) {
+		const size = 3
+		command := make([]byte, size)
+		read, err := buf.Read(command)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(read).To(Equal(size), "shoud have three bytes of command")
+
+		Expect(command[0]).To(Equal(RegisterSelect), "should call RegisterSelect")
+		Expect(command[1]).To(Equal(register), "should select the register")
+		Expect(command[2]).To(Equal(subregister), "should select the subregister")
+	}
+
 	TestRemainingCommands := func(buf *gbytes.Buffer, commands int) {
 		const bytesPerCommand = 4
 		allCommands, err := ioutil.ReadAll(buf)
@@ -75,6 +87,11 @@ var _ = Describe("as1130", func() {
 		})
 
 		Describe("MaxFrames", func() {
+			BeforeEach(func() {
+				_, err := readBuf.Write([]byte{0x0})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			Context("Config.BlinkAndPWMSets is unset", func() {
 				It("MaxFrames returns an error", func() {
 					max, err := as.MaxFrames()
@@ -92,6 +109,7 @@ var _ = Describe("as1130", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(max).To(Equal(uint8(maxFrames)))
 
+					TestReadCommand(writeBuf, RegisterControl, ControlConfig)
 					TestRemainingCommands(writeBuf, 1)
 				},
 				Entry("to 1", 1, 36),
@@ -339,31 +357,73 @@ var _ = Describe("as1130", func() {
 				subregister = ControlConfig
 			)
 
-			It("should write defaults", func() {
-				config := Config{}
-				Expect(as.SetConfig(config)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "00000001")
+			Context("BlinkAndPWMSets has not been previously set", func() {
+				BeforeEach(func() {
+					var err error
+					_, err = readBuf.Write([]byte{0x0})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("should write defaults", func() {
+					config := Config{}
+					Expect(as.SetConfig(config)).To(Succeed())
+
+					TestReadCommand(writeBuf, register, subregister)
+					TestCommand(writeBuf, register, subregister, "00000001")
+				})
+
+				It("should write non-defaults", func() {
+					config := Config{
+						LowVDDReset:        true,
+						LowVDDStatus:       true,
+						LEDErrorCorrection: true,
+						DotCorrection:      true,
+						CommonAddress:      true,
+						BlinkAndPWMSets:    6,
+					}
+					Expect(as.SetConfig(config)).To(Succeed())
+
+					TestReadCommand(writeBuf, register, subregister)
+					TestCommand(writeBuf, register, subregister, "11111110")
+				})
+
+				It("should error on out of range BlinkAndPWMSets", func() {
+					config := Config{
+						BlinkAndPWMSets: 7,
+					}
+					Expect(as.SetConfig(config)).To(MatchError("BlinkAndPWMSets out of range [1,6]: 7"))
+					Expect(writeBuf.Contents()).To(BeEmpty())
+				})
 			})
 
-			It("should write non-defaults", func() {
-				config := Config{
-					LowVDDReset:        true,
-					LowVDDStatus:       true,
-					LEDErrorCorrection: true,
-					DotCorrection:      true,
-					CommonAddress:      true,
-					BlinkAndPWMSets:    6,
-				}
-				Expect(as.SetConfig(config)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, "11111110")
-			})
+			Context("BlinkAndPWMSets has been previously set to 2", func() {
+				BeforeEach(func() {
+					var err error
+					_, err = readBuf.Write([]byte{0x2})
+					Expect(err).ToNot(HaveOccurred())
+				})
 
-			It("should error on out of range BlinkAndPWMSets", func() {
-				config := Config{
-					BlinkAndPWMSets: 7,
-				}
-				Expect(as.SetConfig(config)).To(MatchError("BlinkAndPWMSets out of range [1,6]: 7"))
-				Expect(writeBuf.Contents()).To(BeEmpty())
+				It("should write the same BlinkAndPWMSets", func() {
+					config := Config{
+						BlinkAndPWMSets: 2,
+					}
+					Expect(as.SetConfig(config)).To(Succeed())
+
+					TestReadCommand(writeBuf, register, subregister)
+					TestCommand(writeBuf, register, subregister, "00000010")
+				})
+
+				It("should error on different BlinkAndPWMSets", func() {
+					config := Config{
+						BlinkAndPWMSets: 1,
+					}
+					Expect(as.SetConfig(config)).To(MatchError(
+						"you must hard reset the device to change BlinkAndPWMSets",
+					))
+
+					TestReadCommand(writeBuf, register, subregister)
+					TestRemainingCommands(writeBuf, 0)
+				})
 			})
 		})
 

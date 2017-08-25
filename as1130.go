@@ -106,6 +106,19 @@ func (a *AS1130) Write(register, subregister, data byte) error {
 	return a.conn.WriteReg(subregister, []byte{data})
 }
 
+// Read a register from the AS1130.
+func (a *AS1130) Read(register, subregister byte) (byte, error) {
+	err := a.conn.WriteReg(RegisterSelect, []byte{register})
+	if err != nil {
+		return byte(0), err
+	}
+
+	buf := make([]byte, 1)
+	err = a.conn.ReadReg(subregister, buf)
+
+	return buf[0], err
+}
+
 // Init performs the startup sequence with default settings. You still need
 // to call Start() when all frames and related settings have been set.
 func (a *AS1130) Init(blinkAndPWMSets uint8) error {
@@ -128,8 +141,9 @@ func (a *AS1130) Start() error {
 	return a.SetShutdown(Shutdown{})
 }
 
-// Reset performs a shutdown and resets all settings, then waits for the
-// device to become ready again. You will need to call Init() afterwards.
+// Reset performs a soft reset of the device. It shuts down the outputs and
+// state machine, then waits for the device to become ready again. Not all
+// registers are reset. You will need to call Init() afterwards.
 func (a *AS1130) Reset() error {
 	reset := Shutdown{
 		Initialise: true,
@@ -303,13 +317,22 @@ type Config struct {
 }
 
 // SetConfig sets the config register. The config cannot be changed once you
-// have written any frame data, you will need to call Reset().
+// have written any frame data, you will need to hard reset the device.
 func (a *AS1130) SetConfig(c Config) error {
 	if c.BlinkAndPWMSets == 0 {
 		c.BlinkAndPWMSets = 1
 	}
 	if v, max := c.BlinkAndPWMSets, 6; v > 6 {
 		return fmt.Errorf("BlinkAndPWMSets out of range [1,%d]: %d", max, v)
+	}
+
+	existingConfig, err := a.Read(RegisterControl, ControlConfig)
+	if err != nil {
+		return err
+	}
+	existingBlinkAndPWMSets := existingConfig & 0x7
+	if existingBlinkAndPWMSets != 0 && existingBlinkAndPWMSets != c.BlinkAndPWMSets {
+		return fmt.Errorf("you must hard reset the device to change BlinkAndPWMSets")
 	}
 
 	data := boolToByte(c.LowVDDReset)<<7 |
@@ -319,7 +342,7 @@ func (a *AS1130) SetConfig(c Config) error {
 		boolToByte(c.CommonAddress)<<3 |
 		c.BlinkAndPWMSets
 
-	err := a.Write(RegisterControl, ControlConfig, data)
+	err = a.Write(RegisterControl, ControlConfig, data)
 	if err == nil {
 		a.blinkAndPWMSets = c.BlinkAndPWMSets
 	}
