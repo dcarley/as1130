@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"io/ioutil"
 
 	"golang.org/x/exp/io/i2c"
 
@@ -16,10 +17,20 @@ import (
 )
 
 var _ = Describe("as1130", func() {
-	TestCommand := func(buf *gbytes.Buffer, register, subregister byte, binaryData string) {
-		command := buf.Contents()
+	TestRemainingCommands := func(buf *gbytes.Buffer, commands int) {
+		const bytesPerCommand = 4
+		allCommands, err := ioutil.ReadAll(buf)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(allCommands).To(HaveLen(commands * bytesPerCommand))
+	}
 
-		Expect(command).To(HaveLen(4), "shoud have four bytes of commands")
+	TestCommand := func(buf *gbytes.Buffer, register, subregister byte, binaryData string) {
+		const bytesPerCommand = 4
+		command := make([]byte, bytesPerCommand)
+		read, err := buf.Read(command)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(read).To(Equal(bytesPerCommand), "shoud have four bytes of command")
+
 		Expect(command[0]).To(Equal(RegisterSelect), "should call RegisterSelect")
 		Expect(command[1]).To(Equal(register), "should select the register")
 		Expect(command[2]).To(Equal(subregister), "should select the subregister")
@@ -49,6 +60,8 @@ var _ = Describe("as1130", func() {
 		})
 
 		AfterEach(func() {
+			TestRemainingCommands(writeBuf, 0)
+
 			Expect(as.Close()).To(Succeed())
 			Expect(writeBuf.Closed()).To(BeTrue())
 			Expect(readBuf.Closed()).To(BeTrue())
@@ -78,6 +91,8 @@ var _ = Describe("as1130", func() {
 					max, err := as.MaxFrames()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(max).To(Equal(uint8(maxFrames)))
+
+					TestRemainingCommands(writeBuf, 1)
 				},
 				Entry("to 1", 1, 36),
 				Entry("to 2", 2, 30),
@@ -378,6 +393,7 @@ var _ = Describe("as1130", func() {
 		})
 
 		Describe("SetFrame", func() {
+			const commandsPerFrame = int(FrameSegmentLast - FrameSegmentFirst + 1)
 			var frame *Frame12x11
 
 			BeforeEach(func() {
@@ -399,12 +415,12 @@ var _ = Describe("as1130", func() {
 
 				It("should write first frame", func() {
 					Expect(as.SetFrame(1, frame)).To(Succeed())
-					Expect(writeBuf.Contents()).To(HaveLen(4 * int(FrameSegmentLast-FrameSegmentFirst+1)))
+					TestRemainingCommands(writeBuf, commandsPerFrame)
 				})
 
 				It("should write last frame", func() {
 					Expect(as.SetFrame(36, frame)).To(Succeed())
-					Expect(writeBuf.Contents()).To(HaveLen(4 * int(FrameSegmentLast-FrameSegmentFirst+1)))
+					TestRemainingCommands(writeBuf, commandsPerFrame)
 				})
 
 				It("should error on zero indexed frame", func() {
@@ -432,6 +448,8 @@ var _ = Describe("as1130", func() {
 						).To(
 							Equal(secondSegmentData),
 						)
+
+						TestRemainingCommands(writeBuf, commandsPerFrame)
 					},
 					Entry("uses set 1 when default 0", 0, "00000111"),
 					Entry("uses set 1", 1, "00000111"),
@@ -452,10 +470,9 @@ var _ = Describe("as1130", func() {
 
 		Describe("SetBlinkAndPWMSet", func() {
 			const (
-				commandsPerSegment = 4
-				blinkSegments      = int(FrameSegmentLast-FrameSegmentFirst) + 1
-				pwmSegments        = int(PWMSegmentLast-PWMSegmentFirst) + 1
-				totalSegments      = blinkSegments + pwmSegments
+				blinkSegments = int(FrameSegmentLast-FrameSegmentFirst) + 1
+				pwmSegments   = int(PWMSegmentLast-PWMSegmentFirst) + 1
+				totalSegments = blinkSegments + pwmSegments
 			)
 
 			var blink, pwm *Frame12x11
@@ -480,12 +497,12 @@ var _ = Describe("as1130", func() {
 
 				It("should write first set", func() {
 					Expect(as.SetBlinkAndPWMSet(1, blink, pwm)).To(Succeed())
-					Expect(writeBuf.Contents()).To(HaveLen(commandsPerSegment * totalSegments))
+					TestRemainingCommands(writeBuf, totalSegments)
 				})
 
 				It("should write last set", func() {
 					Expect(as.SetBlinkAndPWMSet(6, blink, pwm)).To(Succeed())
-					Expect(writeBuf.Contents()).To(HaveLen(commandsPerSegment * totalSegments))
+					TestRemainingCommands(writeBuf, totalSegments)
 				})
 
 				It("should error on zero indexed frame", func() {
