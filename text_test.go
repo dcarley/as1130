@@ -18,9 +18,9 @@ var _ = Describe("Text", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should have 1 frame per 4 characters on average", func() {
+		It("should have 1 frame per 5 characters on average", func() {
 			const (
-				framesPerChar = 4
+				framesPerChar = 5
 				spacerFrames  = 1
 			)
 

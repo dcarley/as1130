@@ -10,7 +10,12 @@ If you modify the font file then you'll need to run `go generate` from the
 
 ## License
 
-The font that we're currently using is by vyznev and licensed under Creative
-Commons CC0.
+The font is:
+
+- https://fontstruct.com/fontstructions/show/1424354/led-5px-narrow
+
+Which is derived from a CC0 licensed font by vyznev:
 
 - https://fontstruct.com/fontstructions/show/1404171/cg-pixel-4x5
+
+[CC0]: https://creativecommons.org/publicdomain/zero/1.0/
