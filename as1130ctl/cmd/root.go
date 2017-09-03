@@ -39,7 +39,7 @@ func (s *SizeVar) Set(val string) error {
 }
 
 func (s *SizeVar) Type() string {
-	return "int"
+	return "string"
 }
 
 var RootCmd = &cobra.Command{
