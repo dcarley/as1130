@@ -1,4 +1,4 @@
-[![](https://godoc.org/github.com/dcarley/as1130?status.svg)][godoc]
+[![Documentation](https://godoc.org/github.com/dcarley/as1130?status.svg)][godoc]
 [![Build Status](https://travis-ci.org/dcarley/as1130.svg?branch=master)](https://travis-ci.org/dcarley/as1130)
 
 [godoc]: http://godoc.org/github.com/dcarley/as1130
