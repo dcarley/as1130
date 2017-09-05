@@ -629,13 +629,10 @@ var _ = Describe("as1130", func() {
 					func(pwmSet int, secondSegmentData string) {
 						frame.SetPWMSet(uint8(pwmSet))
 						Expect(as.SetFrame(1, frame)).To(Succeed())
-						Expect(
-							binaryString(writeBuf.Contents()[7]),
-						).To(
-							Equal(secondSegmentData),
-						)
 
-						TestRemainingCommands(writeBuf, commandsPerFrame)
+						TestCommand(writeBuf, RegisterOnOffFrameFirst, FrameSegmentFirst, "11111111")
+						TestCommand(writeBuf, RegisterOnOffFrameFirst, FrameSegmentFirst+1, secondSegmentData)
+						TestRemainingCommands(writeBuf, commandsPerFrame-2)
 					},
 					Entry("uses set 1 when default 0", 0, "00000111"),
 					Entry("uses set 1", 1, "00000111"),
