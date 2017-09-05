@@ -77,6 +77,11 @@ func boolToByte(v bool) byte {
 	return 0
 }
 
+// byteToBool converts a 1bit value to a boolean.
+func byteToBool(v byte) bool {
+	return v == 1
+}
+
 // validateClockFreq checks whether a clock out frequency is valid.
 func validateClockFreq(freq ClockFreq) bool {
 	validFreqs := []ClockFreq{Clock1MHz, Clock500kHz, Clock125kHz, Clock32kHz}
@@ -452,6 +457,27 @@ func (a *AS1130) SetClockSync(c ClockSync) error {
 		boolToByte(c.SyncIn)
 
 	return a.Write(RegisterControl, ControlClockSync, data)
+}
+
+// InterruptStatus returns the contents of the interrupt status register.
+func (a *AS1130) InterruptStatus() (InterruptMask, error) {
+	data, err := a.Read(RegisterControl, ControlInterruptStatus)
+	if err != nil {
+		return InterruptMask{}, err
+	}
+
+	interrupts := InterruptMask{
+		Frame:        byteToBool((data & 0x80) >> 7),
+		Watchdog:     byteToBool((data & 0x40) >> 6),
+		PowerOrReset: byteToBool((data & 0x20) >> 5),
+		OverTemp:     byteToBool((data & 0x10) >> 4),
+		LowVDD:       byteToBool((data & 0x08) >> 3),
+		OpenError:    byteToBool((data & 0x04) >> 2),
+		ShortError:   byteToBool((data & 0x02) >> 1),
+		MovieFinish:  byteToBool((data & 0x01) >> 0),
+	}
+
+	return interrupts, nil
 }
 
 // SetFrame sets an On/Off frame.

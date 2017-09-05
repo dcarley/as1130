@@ -578,6 +578,91 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("InterruptStatus", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlInterruptStatus
+			)
+
+			Context("no interrupts triggered", func() {
+				BeforeEach(func() {
+					data := byte(0)
+					Expect(binaryString(data)).To(Equal("00000000"))
+
+					_, err := readBuf.Write([]byte{data})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("should report all interrupts as false", func() {
+					interrupts, err := as.InterruptStatus()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interrupts).To(Equal(InterruptMask{
+						Frame:        false,
+						Watchdog:     false,
+						PowerOrReset: false,
+						OverTemp:     false,
+						LowVDD:       false,
+						OpenError:    false,
+						ShortError:   false,
+						MovieFinish:  false,
+					}))
+					TestReadCommand(writeBuf, register, subregister)
+				})
+			})
+
+			Context("every other interrupt triggered", func() {
+				BeforeEach(func() {
+					data := byte(170)
+					Expect(binaryString(data)).To(Equal("10101010"))
+
+					_, err := readBuf.Write([]byte{data})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("should report every other interrupt as true", func() {
+					interrupts, err := as.InterruptStatus()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interrupts).To(Equal(InterruptMask{
+						Frame:        true,
+						Watchdog:     false,
+						PowerOrReset: true,
+						OverTemp:     false,
+						LowVDD:       true,
+						OpenError:    false,
+						ShortError:   true,
+						MovieFinish:  false,
+					}))
+					TestReadCommand(writeBuf, register, subregister)
+				})
+			})
+
+			Context("all interrupts triggered", func() {
+				BeforeEach(func() {
+					data := byte(255)
+					Expect(binaryString(data)).To(Equal("11111111"))
+
+					_, err := readBuf.Write([]byte{data})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("should report all interrupts as true", func() {
+					interrupts, err := as.InterruptStatus()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interrupts).To(Equal(InterruptMask{
+						Frame:        true,
+						Watchdog:     true,
+						PowerOrReset: true,
+						OverTemp:     true,
+						LowVDD:       true,
+						OpenError:    true,
+						ShortError:   true,
+						MovieFinish:  true,
+					}))
+					TestReadCommand(writeBuf, register, subregister)
+				})
+			})
+		})
+
 		Describe("SetFrame", func() {
 			const commandsPerFrame = int(FrameSegmentLast - FrameSegmentFirst + 1)
 			var frame *Frame12x11
