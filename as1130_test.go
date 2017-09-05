@@ -438,13 +438,13 @@ var _ = Describe("as1130", func() {
 			)
 
 			It("should write defaults", func() {
-				mask := InterruptMask{}
+				mask := Interrupt{}
 				Expect(as.SetInterruptMask(mask)).To(Succeed())
 				TestCommand(writeBuf, register, subregister, "00000000")
 			})
 
 			It("should write non-defaults", func() {
-				mask := InterruptMask{
+				mask := Interrupt{
 					Frame:        true,
 					Watchdog:     true,
 					PowerOrReset: true,
@@ -596,7 +596,7 @@ var _ = Describe("as1130", func() {
 				It("should report all interrupts as false", func() {
 					interrupts, err := as.InterruptStatus()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(interrupts).To(Equal(InterruptMask{
+					Expect(interrupts).To(Equal(Interrupt{
 						Frame:        false,
 						Watchdog:     false,
 						PowerOrReset: false,
@@ -622,7 +622,7 @@ var _ = Describe("as1130", func() {
 				It("should report every other interrupt as true", func() {
 					interrupts, err := as.InterruptStatus()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(interrupts).To(Equal(InterruptMask{
+					Expect(interrupts).To(Equal(Interrupt{
 						Frame:        true,
 						Watchdog:     false,
 						PowerOrReset: true,
@@ -648,7 +648,7 @@ var _ = Describe("as1130", func() {
 				It("should report all interrupts as true", func() {
 					interrupts, err := as.InterruptStatus()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(interrupts).To(Equal(InterruptMask{
+					Expect(interrupts).To(Equal(Interrupt{
 						Frame:        true,
 						Watchdog:     true,
 						PowerOrReset: true,

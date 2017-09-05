@@ -379,7 +379,9 @@ func (a *AS1130) SetConfig(c Config) error {
 }
 
 // Interrupt Mask Register Format (datasheet fig. 46)
-type InterruptMask struct {
+// and
+// Interrupt Status Register Format (datasheet fig. 51)
+type Interrupt struct {
 	Frame        bool // Trigger IRQ when frame defined by SetInterruptFrame is displayed
 	Watchdog     bool // Trigger IRQ when the I²C watchdog triggers
 	PowerOrReset bool // Trigger IRQ when power or reset has occurred
@@ -391,7 +393,7 @@ type InterruptMask struct {
 }
 
 // SetInterruptMask sets the interrupt mask register.
-func (a *AS1130) SetInterruptMask(i InterruptMask) error {
+func (a *AS1130) SetInterruptMask(i Interrupt) error {
 	data := boolToByte(i.Frame)<<7 |
 		boolToByte(i.Watchdog)<<6 |
 		boolToByte(i.PowerOrReset)<<5 |
@@ -405,7 +407,7 @@ func (a *AS1130) SetInterruptMask(i InterruptMask) error {
 }
 
 // SetInterruptFrame sets the interrupt frame register. This should be used
-// in combination with InterruptMask.Frame
+// in combination with Interrupt.Frame
 func (a *AS1130) SetInterruptFrame(lastFrame uint8) error {
 	if max, err := a.MaxFrames(); err != nil {
 		return err
@@ -460,13 +462,13 @@ func (a *AS1130) SetClockSync(c ClockSync) error {
 }
 
 // InterruptStatus returns the contents of the interrupt status register.
-func (a *AS1130) InterruptStatus() (InterruptMask, error) {
+func (a *AS1130) InterruptStatus() (Interrupt, error) {
 	data, err := a.Read(RegisterControl, ControlInterruptStatus)
 	if err != nil {
-		return InterruptMask{}, err
+		return Interrupt{}, err
 	}
 
-	interrupts := InterruptMask{
+	interrupts := Interrupt{
 		Frame:        byteToBool((data & 0x80) >> 7),
 		Watchdog:     byteToBool((data & 0x40) >> 6),
 		PowerOrReset: byteToBool((data & 0x20) >> 5),
