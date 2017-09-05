@@ -482,6 +482,29 @@ func (a *AS1130) InterruptStatus() (Interrupt, error) {
 	return interrupts, nil
 }
 
+// Status Register Format (datasheet fig. 52)
+type Status struct {
+	Frame uint8 // Currently displayed frame
+	Movie bool  // Movie playing
+	Test  bool  // Test running
+}
+
+// Status returns the contents of the status register.
+func (a *AS1130) Status() (Status, error) {
+	data, err := a.Read(RegisterControl, ControlStatus)
+	if err != nil {
+		return Status{}, err
+	}
+
+	status := Status{
+		Frame: ((data & 0xFC) >> 2) + 1,
+		Movie: byteToBool((data & 0x02) >> 1),
+		Test:  byteToBool((data & 0x01) >> 0),
+	}
+
+	return status, nil
+}
+
 // SetFrame sets an On/Off frame.
 func (a *AS1130) SetFrame(frame uint8, img Framer) error {
 	if max, err := a.MaxFrames(); err != nil {

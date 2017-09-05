@@ -663,6 +663,54 @@ var _ = Describe("as1130", func() {
 			})
 		})
 
+		Describe("Status", func() {
+			const (
+				register    = RegisterControl
+				subregister = ControlStatus
+			)
+
+			DescribeTable("status register",
+				func(data byte, dataString string, expected Status) {
+					Expect(binaryString(data)).To(Equal(dataString))
+					_, err := readBuf.Write([]byte{data})
+					Expect(err).ToNot(HaveOccurred())
+
+					status, err := as.Status()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(status).To(Equal(expected))
+					TestReadCommand(writeBuf, register, subregister)
+				},
+				Entry("first frame displayed",
+					byte(0x00), "00000000", Status{
+						Frame: 1,
+						Movie: false,
+						Test:  false,
+					},
+				),
+				Entry("last frame displayed",
+					byte(0x8C), "10001100", Status{
+						Frame: 36,
+						Movie: false,
+						Test:  false,
+					},
+				),
+				Entry("movie is running",
+					byte(0x02), "00000010", Status{
+						Frame: 1,
+						Movie: true,
+						Test:  false,
+					},
+				),
+				Entry("test is running",
+					byte(0x01), "00000001", Status{
+						Frame: 1,
+						Movie: false,
+						Test:  true,
+					},
+				),
+			)
+		})
+
 		Describe("SetFrame", func() {
 			const commandsPerFrame = int(FrameSegmentLast - FrameSegmentFirst + 1)
 			var frame *Frame12x11
