@@ -16,6 +16,10 @@ import (
 	"github.com/onsi/gomega/gbytes"
 )
 
+func binaryString(v byte) string {
+	return fmt.Sprintf("%08b", v)
+}
+
 var _ = Describe("as1130", func() {
 	TestReadCommand := func(buf *gbytes.Buffer, register, subregister byte) {
 		const size = 3
@@ -47,7 +51,7 @@ var _ = Describe("as1130", func() {
 		Expect(command[1]).To(Equal(register), "should select the register")
 		Expect(command[2]).To(Equal(subregister), "should select the subregister")
 		Expect(
-			fmt.Sprintf("%08b", command[3]),
+			binaryString(command[3]),
 		).To(
 			Equal(binaryData), "should write data to the register",
 		)
@@ -333,17 +337,17 @@ var _ = Describe("as1130", func() {
 
 			It("should set to min", func() {
 				Expect(as.SetCurrentSource(0)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(0)))
+				TestCommand(writeBuf, register, subregister, binaryString(byte(0)))
 			})
 
 			It("should set to half way", func() {
 				Expect(as.SetCurrentSource(15)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(127)))
+				TestCommand(writeBuf, register, subregister, binaryString(byte(127)))
 			})
 
 			It("should set to max", func() {
 				Expect(as.SetCurrentSource(30)).To(Succeed())
-				TestCommand(writeBuf, register, subregister, fmt.Sprintf("%08b", byte(255)))
+				TestCommand(writeBuf, register, subregister, binaryString(byte(255)))
 			})
 
 			It("should error on invalid current", func() {
@@ -626,7 +630,7 @@ var _ = Describe("as1130", func() {
 						frame.SetPWMSet(uint8(pwmSet))
 						Expect(as.SetFrame(1, frame)).To(Succeed())
 						Expect(
-							fmt.Sprintf("%08b", writeBuf.Contents()[7]),
+							binaryString(writeBuf.Contents()[7]),
 						).To(
 							Equal(secondSegmentData),
 						)
