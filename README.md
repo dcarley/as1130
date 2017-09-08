@@ -19,6 +19,8 @@ Pi][].
 [I²C]: https://en.wikipedia.org/wiki/I%C2%B2C
 [Raspberry Pi]: https://pinout.xyz/pinout/i2c
 
+![as1130 text scrolling](https://user-images.githubusercontent.com/260438/30202937-1f3b391c-9478-11e7-9482-1fd4fc82b096.gif)
+
 ## Library
 
 To fetch the library:
